@@ -8,9 +8,9 @@ The protocol is currently under heavy testing and research. We are trying our be
 
 # Roadmap
 
- * [x] [Hackathon](https://github.com/linkeddata/webid-login)
- * [x] [Initial Build](https://github.com/linkeddata/webid-signup)
- * [x] [Pre-Alpha Build](https://github.com/linkeddata/webid-signup)
+ * [x] [Hackathon](https://showcase.ethglobal.com/ethonline2021/supaheroes)
+ * [x] [Initial Build](https://github.com/SupaHeroes/supaheroes)
+ * [x] [Pre-Alpha Build](https://github.com/SupaHeroes/supaheroes)
  * [ ] [In Progress] [Whitepaper](https://github.com/linkeddata/webid-keychain)
  * [ ] Alpha Build (with the ability to integrate with DeFi protocols)
  * [ ] Real Crowdfunding Test
