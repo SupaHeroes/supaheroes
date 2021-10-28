@@ -15,7 +15,7 @@ contract Station is Ownable, IStation {
         treasury = _treasury;
     }
 
-    function getStationMeta() external view returns(string memory meta){
+    function getStationMeta() external override view returns(string memory meta){
         return metadata;
     }
 
@@ -29,7 +29,7 @@ contract Station is Ownable, IStation {
         uint256 _fundingEndTime, 
         uint256 _fundTarget, 
         uint256 _projectEndTime)
-        external{
+        external override{
         Campaign project = new Campaign(
             _projectName, 
             _projectStarter,

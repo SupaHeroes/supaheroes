@@ -2,7 +2,7 @@
 pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token//ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/ICampaign.sol";
 
 //contract template for initiating a project
@@ -37,7 +37,7 @@ contract Campaign is Ownable, ICampaign {
         fundingEndTime = _fundingEndTime;
     }
 
-    function pledge(uint256 amount, address token) external {
+    function pledge(uint256 amount, address token) external override {
         require(amount > 0, "Amount cannot be 0");
         require(fundingEndTime > block.timestamp, "Funding ended");
 
@@ -81,11 +81,11 @@ contract Campaign is Ownable, ICampaign {
         metadata = url;
     }
 
-    function changeTreasuryAddress(address payable newTreasury) external onlyOwner{
+    function changeTreasuryAddress(address payable newTreasury) external override onlyOwner{
         treasury = newTreasury;
     }
 
-    function payOut(uint256 amount) external returns (uint success) {
+    function payOut(uint256 amount) external override returns (uint success) {
         require(msg.sender == treasury);
         require(fundingEndTime < block.timestamp);
         require(amount >= address(this).balance);
