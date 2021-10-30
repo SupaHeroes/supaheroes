@@ -2,7 +2,7 @@
 pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./Station.sol";
+import "../Station.sol";
 
 contract Headquarter is Ownable {
     Station[] public stations;

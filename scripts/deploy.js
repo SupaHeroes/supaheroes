@@ -15,7 +15,7 @@ async function main() {
   const Headquarter = await ethers.getContractFactory("Headquarter");
   const hq = await Headquarter.deploy();
 
-  console.log("Token address:", hq.address);
+  console.log("Contract address:", hq.address);
 }
 
 main()

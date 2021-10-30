@@ -25,12 +25,12 @@ contract Campaign is Ownable, ICampaign {
     //put owner in constructor to use for initializing project
     constructor(
         string memory _metadata,
-        address payable _projectStarter,
+        address payable _treasury,
         uint256 _fundingEndTime,
         uint256 _fundTarget,
         uint256 _fundingStartTime
     ) {
-        treasury = _projectStarter;
+        treasury = _treasury;
         metadata = _metadata;
         fundTarget = _fundTarget;
         fundingStartTime = _fundingStartTime;
