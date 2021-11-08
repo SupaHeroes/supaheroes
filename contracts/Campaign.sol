@@ -10,7 +10,7 @@ contract Campaign is Ownable, ICampaign {
     mapping(address => uint256) public userDeposit;
     //variable for projectname
 
-    string metadata;
+    string metadata_uri;
     //variable for projectstarter (EOA projectstarter)
     address payable treasury;
     //starttime of fundingperiod (is this necessary?)
@@ -30,8 +30,8 @@ contract Campaign is Ownable, ICampaign {
         uint256 _fundTarget,
         uint256 _fundingStartTime
     ) {
-        treasury = _treasury;
-        metadata = _metadata;
+        treasury = _projectStarter;
+        metadata_uri = _metadata;
         fundTarget = _fundTarget;
         fundingStartTime = _fundingStartTime;
         fundingEndTime = _fundingEndTime;
@@ -60,7 +60,7 @@ contract Campaign is Ownable, ICampaign {
             uint256 Balance
         )
     {
-        Metadata = metadata;
+        Metadata = metadata_uri;
         Treasury = treasury;
         Target = fundTarget;
         Balance = address(this).balance;
@@ -78,7 +78,7 @@ contract Campaign is Ownable, ICampaign {
     }
 
     function changeMetadata(string memory url) external override onlyOwner{
-        metadata = url;
+        metadata_uri = url;
     }
 
     function changeTreasuryAddress(address payable newTreasury) external override onlyOwner{

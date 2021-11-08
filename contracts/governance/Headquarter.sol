@@ -3,17 +3,15 @@ pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../Station.sol";
+import "../interfaces/IStation.sol";
 
 contract Headquarter is Ownable {
+    event StationCreated(address indexed stationContract, bool approved);
+
     Station[] public stations;
-    event StationCreated(uint timestamp);
-    function deployStation(
-        string memory _metaUri, address payable treasury)
-        public onlyOwner {
-        Station project = new Station(
-            _metaUri , treasury
-        );
-        stations.push(project);
-        emit StationCreated(block.timestamp);
+    mapping (address => bool) approvedStations;
+
+    function registerStation(IStation station) public {
+
     }
 }

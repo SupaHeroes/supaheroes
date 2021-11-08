@@ -5,14 +5,9 @@ import "./ICampaign.sol";
 
 interface IStation {
     event CampaignCreated(address newAddress);
+    event CampaignRegistered(address newAddress);
 
     function getStationMeta() external view returns (string memory meta);
 
-    function startCampaign(
-        string memory _projectName,
-        address payable _projectStarter,
-        uint256 _fundingEndTime,
-        uint256 _fundTarget,
-        uint256 _projectEndTime
-    ) external;
+    function registerCampaign(ICampaign campaign) external returns (bool result);
 }
