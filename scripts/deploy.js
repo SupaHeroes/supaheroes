@@ -12,10 +12,19 @@ async function main() {
 
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
-  const Headquarter = await ethers.getContractFactory("Headquarter");
-  const hq = await Headquarter.deploy();
+  // const Headquarter = await ethers.getContractFactory("Headquarter");
+  // const hq = await Headquarter.deploy();
 
-  console.log("Contract address:", hq.address);
+  // console.log("Headquarter address:", hq.address);
+
+  const factory = await ethers.getContractFactory("StandardCampaignFactory");
+  const fc = await factory.deploy();
+
+  // const station = await ethers.getContractFactory("Station");
+  // const st = await station.deploy();
+
+  console.log("Factory address:", fc.address);
+  // console.log("Station address:", st.address);
 }
 
 main()

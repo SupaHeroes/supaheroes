@@ -2,42 +2,49 @@
 pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./Campaign.sol";
 import "./interfaces/IStation.sol";
+import "./interfaces/IFactory.sol";
+import "./interfaces/IStrategy.sol";
+import "./Campaign.sol";
+import "./governance/Headquarter.sol";
 
 contract Station is Ownable, IStation {
-    string metadata;
+    string metadata_uri;
+    Headquarter public immutable headquarter;
     address payable treasury;
-    Campaign[] public campaigns;
 
-    constructor(string memory _metadata, address payable _treasury){
-        metadata = _metadata;
+    mapping(uint => Campaign) campaigns;
+
+    IFactory[] public campaignFactories;
+
+    uint listedCampaignCount;
+
+    constructor(string memory _metadata, address payable _treasury, Headquarter hq){
+        hq.registerStation();
+        headquarter = hq;
+        metadata_uri = _metadata;
         treasury = _treasury;
     }
 
+    function addSupportedFactory(IFactory factory) external override onlyOwner {
+        campaignFactories.push(factory);
+    }
+
+     function listCampaign(Campaign campaign) external override {
+         campaigns[listedCampaignCount] = campaign;
+         listedCampaignCount += 1;
+     }
+
     function getStationMeta() external override view returns(string memory meta){
-        return metadata;
+        return metadata_uri;
     }
 
-    function getAllCampaigns() external view returns(Campaign[] memory){
-        return campaigns;
+    function changeStationMeta(string memory newMeta) external onlyOwner{
+        metadata_uri = newMeta;
     }
 
-    function startCampaign(
-        string memory _projectName, 
-        address payable _projectStarter, 
-        uint256 _fundingEndTime, 
-        uint256 _fundTarget, 
-        uint256 _projectEndTime)
-        external override{
-        Campaign project = new Campaign(
-            _projectName, 
-            _projectStarter,
-            _fundingEndTime,
-            _fundTarget,
-            _projectEndTime            
-        );
-        campaigns.push(project);
-        emit CampaignCreated(address(this));
-    }
+    // function getAllCampaigns() external view returns(IFactory.Campaign[] memory){
+    //     return campaigns;
+    // }
+
 }
