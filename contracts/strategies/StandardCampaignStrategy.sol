@@ -4,10 +4,13 @@ pragma solidity ^0.8.6;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/ICampaign.sol";
+import "../interfaces/IFactory.sol";
 
 //contract template for initiating a project
 contract StandardCampaignStrategy is Ownable, ICampaign {
     mapping(address => uint256) public userDeposit;
+
+    IFactory public immutable factory;
     //@notice project metadata can be hosted on IPFS or centralized storages.
     address payable public treasury;
     //@notice the start time of crowdfunding session
@@ -23,13 +26,15 @@ contract StandardCampaignStrategy is Ownable, ICampaign {
 
     //put owner in constructor to use for initializing project
     constructor(
-        string memory metadata,
+        IFactory _factory,
+        string memory _metadata,
         address payable _treasury,
         uint256 _fundingEndTime,
         uint256 _fundTarget,
         uint256 _fundingStartTime
     ) {
-        metadata_uri = metadata;
+        factory = _factory;
+        metadata_uri = _metadata;
         treasury = _treasury;
         fundTarget = _fundTarget;
         fundingStartTime = _fundingStartTime;
@@ -39,6 +44,10 @@ contract StandardCampaignStrategy is Ownable, ICampaign {
     function changeMetadata(string memory newMetadata) external {
         require(msg.sender == treasury, "You are not the campaign owner");
        metadata_uri = newMetadata;
+    }
+
+    function getFactory() external view override returns (IFactory){
+        return factory;
     }
 
     function pledge(uint256 amount, address token) external override {

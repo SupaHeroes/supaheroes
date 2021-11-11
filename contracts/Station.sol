@@ -9,7 +9,9 @@ import "./governance/Headquarter.sol";
 
 contract Station is Ownable, IStation {
     string metadata_uri;
+
     Headquarter public immutable headquarter;
+
     address payable treasury;
 
     mapping(uint => ICampaign) campaigns;
@@ -29,10 +31,20 @@ contract Station is Ownable, IStation {
         campaignFactories.push(factory);
     }
 
-     function listCampaign(ICampaign campaign) external override {
+    function listCampaign(ICampaign campaign) external override {
+        require(_isApproved(campaign.getFactory()));
          campaigns[listedCampaignCount] = campaign;
          listedCampaignCount += 1;
-     }
+    }
+
+    function _isApproved(IFactory _factory) internal view returns (bool) {
+        for (uint256 index = 0; index < campaignFactories.length; index++) {
+            if(campaignFactories[index] == _factory){
+                return true;
+            }
+        }
+        return false;
+    }
 
     function getStationMeta() external override view returns(string memory meta){
         return metadata_uri;

@@ -29,6 +29,7 @@ contract StandardCampaignFactory is Ownable, IFactory {
         uint256 _fundingStartTime)
         external override{
         StandardCampaignStrategy project =  new StandardCampaignStrategy(
+            this,
             metadata,
             _treasury, 
             _fundingEndTime,
