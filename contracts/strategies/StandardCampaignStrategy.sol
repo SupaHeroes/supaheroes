@@ -3,10 +3,10 @@ pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../interfaces/IStrategy.sol";
+import "../interfaces/ICampaign.sol";
 
 //contract template for initiating a project
-contract StandardCampaignStrategy is Ownable, IStrategy {
+contract StandardCampaignStrategy is Ownable, ICampaign {
     mapping(address => uint256) public userDeposit;
     //@notice project metadata can be hosted on IPFS or centralized storages.
     address payable public treasury;
@@ -16,25 +16,34 @@ contract StandardCampaignStrategy is Ownable, IStrategy {
     uint256 public fundingEndTime;
     //@notice the amount of funds to reach a goal
     uint256 public fundTarget;
+    //@notice ipfs url to campaign information
+    string metadata_uri;
 
     IERC20 public supportedCurrency;
 
     //put owner in constructor to use for initializing project
     constructor(
+        string memory metadata,
         address payable _treasury,
         uint256 _fundingEndTime,
         uint256 _fundTarget,
         uint256 _fundingStartTime
     ) {
+        metadata_uri = metadata;
         treasury = _treasury;
         fundTarget = _fundTarget;
         fundingStartTime = _fundingStartTime;
         fundingEndTime = _fundingEndTime;
     }
 
+    function changeMetadata(string memory newMetadata) external {
+        require(msg.sender == treasury, "You are not the campaign owner");
+       metadata_uri = newMetadata;
+    }
+
     function pledge(uint256 amount, address token) external override {
         require(amount > 0, "Amount cannot be 0");
-        require(IERC20(token) == supportedCurrency);
+        require(IERC20(token) == supportedCurrency, "Currency not supported");
         require(fundingEndTime > block.timestamp, "Funding ended");
 
         IERC20(token).transferFrom(msg.sender, address(this), amount);
@@ -47,7 +56,7 @@ contract StandardCampaignStrategy is Ownable, IStrategy {
     }
 
     function balanceOf(address user, address erc20) external override view returns (uint256){
-        require(IERC20(erc20) == supportedCurrency);
+        require(IERC20(erc20) == supportedCurrency, "Currency not supported");
         return userDeposit[msg.sender];
     }
 

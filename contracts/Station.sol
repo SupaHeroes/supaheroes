@@ -4,8 +4,7 @@ pragma solidity ^0.8.6;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IStation.sol";
 import "./interfaces/IFactory.sol";
-import "./interfaces/IStrategy.sol";
-import "./Campaign.sol";
+import "./interfaces/ICampaign.sol";
 import "./governance/Headquarter.sol";
 
 contract Station is Ownable, IStation {
@@ -13,7 +12,7 @@ contract Station is Ownable, IStation {
     Headquarter public immutable headquarter;
     address payable treasury;
 
-    mapping(uint => Campaign) campaigns;
+    mapping(uint => ICampaign) campaigns;
 
     IFactory[] public campaignFactories;
 
@@ -30,7 +29,7 @@ contract Station is Ownable, IStation {
         campaignFactories.push(factory);
     }
 
-     function listCampaign(Campaign campaign) external override {
+     function listCampaign(ICampaign campaign) external override {
          campaigns[listedCampaignCount] = campaign;
          listedCampaignCount += 1;
      }

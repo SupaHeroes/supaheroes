@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-interface IStrategy {
+interface ICampaign {
     /// @notice Balance per ERC-20 token per account in shares.
     function balanceOf(address user, address erc20) external view returns (uint256);
 

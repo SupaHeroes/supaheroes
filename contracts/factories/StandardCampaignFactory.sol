@@ -4,16 +4,16 @@ pragma solidity ^0.8.6;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../strategies/StandardCampaignStrategy.sol";
 import "../interfaces/IFactory.sol";
-import "../Campaign.sol";
+import "../interfaces/ICampaign.sol";
 
 contract StandardCampaignFactory is Ownable, IFactory {
-    mapping(uint => Campaign) public campaigns;
-    mapping(address => mapping(uint => Campaign)) public deployerOf;
+    mapping(uint => StandardCampaignStrategy) public campaigns;
+    mapping(address => mapping(uint => StandardCampaignStrategy)) public deployerOf;
 
     uint256 public deployedCampaigns;
 
-    function getAllCampaigns() external view returns(Campaign[] memory){
-        Campaign[] memory campaignList = new Campaign[](deployedCampaigns);
+    function getAllCampaigns() external view returns(StandardCampaignStrategy[] memory){
+        StandardCampaignStrategy[] memory campaignList = new StandardCampaignStrategy[](deployedCampaigns);
     for (uint i = 0; i < deployedCampaigns; i++) {
         campaignList[i] = campaigns[i];
     }
@@ -28,12 +28,13 @@ contract StandardCampaignFactory is Ownable, IFactory {
         uint256 _fundTarget,
         uint256 _fundingStartTime)
         external override{
-        Campaign project = new Campaign( metadata , new StandardCampaignStrategy(
+        StandardCampaignStrategy project =  new StandardCampaignStrategy(
+            metadata,
             _treasury, 
             _fundingEndTime,
             _fundTarget,
             _fundingStartTime            
-        ));
+    );
         campaigns[deployedCampaigns] = project;
         deployerOf[msg.sender][deployedCampaigns] = project;
         deployedCampaigns += 1;

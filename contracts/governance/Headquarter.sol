@@ -7,7 +7,7 @@ import "../interfaces/IStation.sol";
 
 contract Headquarter is Ownable {
     event RegisteredStationLog(address indexed protocol);
-    event StationCreated(address indexed stationContract, bool approved);
+    event StationApproved(address indexed stationContract, bool approved);
 
     IStation[] public stations;
     mapping (IStation => bool) approvedStations;
