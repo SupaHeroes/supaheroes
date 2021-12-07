@@ -21,6 +21,7 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  */
 module.exports = {
   solidity: "0.8.6",
+  defaultNetwork: "hardhat",
   networks: {
     kovan: {
       url: process.env.ALCHEMY_API_URL || '',

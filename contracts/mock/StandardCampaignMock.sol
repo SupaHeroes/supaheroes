@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/ICampaign.sol";
 
 //contract template for initiating a project
-contract StandardCampaignStrategy is ICampaign {
+contract StandardCampaignMock is ICampaign {
     event LogPledge(address indexed by, address indexed to, uint256 amount, address currency, uint256 timestamp);
     event LogVote(address indexed by, address to, uint256 weight);
     event ChangedAdmin(address newAdmin, uint256 timestamp);
