@@ -7,14 +7,35 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "./interfaces/ICampaign.sol";
 
+/* 
+    Reward Manager for Supaheroes.org
+    Author: Axel Devara
+        
+    ███████████████████████████████████████████████████████████
+    █─▄▄▄▄█▄─██─▄█▄─▄▄─██▀▄─██─█─█▄─▄▄─█▄─▄▄▀█─▄▄─█▄─▄▄─█─▄▄▄▄█
+    █▄▄▄▄─██─██─███─▄▄▄██─▀─██─▄─██─▄█▀██─▄─▄█─██─██─▄█▀█▄▄▄▄─█
+    ▀▄▄▄▄▄▀▀▄▄▄▄▀▀▄▄▄▀▀▀▄▄▀▄▄▀▄▀▄▀▄▄▄▄▄▀▄▄▀▄▄▀▄▄▄▄▀▄▄▄▄▄▀▄▄▄▄▄▀
+    
+    Creates a Supahero Contributor Certificate (SCC) as a proof of contribution. The certificate 
+    is meant to be platform specific, in this case, Supaheroes. For now, certificate is awarded manually
+    by campaign admin. Feel free to fork/PR this contract.
+    */
 contract RewardManager is ERC721, Ownable {    
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
+    mapping(address => bool) internal whitelistedCaller;
+    mapping(address => bool) internal whitelistedCampaign;
+    mapping(address => Agreement[]) public campaignToAgreements;
+    mapping(uint256 => Certificate) public tokenIdtoCertificate;
 
-    mapping(address => bool) whitelistedCaller;
-    mapping(address => bool) whitelistedCampaign;
-    mapping(address => Agreement[]) campaignToAgreements;
+    struct Certificate {
+        string name;
+        string projectName;
+        uint256 amount;
+        address currency;
+        uint256 timestamp;
+    }
 
     struct Agreement {
         uint256 amount;
@@ -35,21 +56,27 @@ contract RewardManager is ERC721, Ownable {
     }
 
     function whitelistCampaign(ICampaign campaignAddress) external {
+        require(whitelistedCaller[msg.sender]);
         whitelistedCampaign[address(campaignAddress)] = true;
     }
 
     function createAgreement(uint _amt, uint _limit, string memory _metadata, address _campaign, address _admin) external {
         require(whitelistedCaller[msg.sender]);
-        campaignToAgreements[_campaign].push(Agreement(_amt, _limit, 0, _admin,0 , 0, _metadata));
+        Agreement storage newAgreement = campaignToAgreements[_campaign][campaignToAgreements[_campaign].length];
+            newAgreement.amount = _amt;
+            newAgreement.limit = _limit;
+            newAgreement.metadata = _metadata;
+            newAgreement.admin = _admin;
     }
 
     function registerForRedeem(address campaignAddress, uint256 agreementId, string memory userData) external {
-        require(campaignAddress != address(0));
-        require(whitelistedCampaign[campaignAddress]);
-        require(campaignToAgreements[campaignAddress].length > agreementId);
+        require(campaignAddress != address(0), "Empty address");
+        require(whitelistedCampaign[campaignAddress], "Campaign is not registered");
+        require(campaignToAgreements[campaignAddress].length > agreementId, "Wrong argument Id");
         Agreement storage agreement = campaignToAgreements[campaignAddress][agreementId];
-        require(msg.sender != agreement.admin);
-        require(agreement.redeemCount < agreement.limit);
+        require(IERC20(campaignAddress).balanceOf(msg.sender) >= agreement.amount, "You don't have enough balance");
+        require(msg.sender != agreement.admin, "Admin should not participate");
+        require(agreement.redeemCount < agreement.limit, "No more slots left");
 
         IERC20(campaignAddress).transfer(address(this), agreement.amount);
 
@@ -58,14 +85,15 @@ contract RewardManager is ERC721, Ownable {
         agreement.rewardDistribution[campaignAddress] = agreement.redeemCount;
     }
 
-    function awardCertificate(address campaignAddress, uint256 agreementId, address recipient) external {
-        require(recipient != address(0));
+    function awardCertificate(address campaignAddress, uint256 agreementId, address recipient, string memory _name, string memory _projectName, address currency) external {
+        require(recipient != address(0), "Empty address");
         Agreement storage agreement = campaignToAgreements[campaignAddress][agreementId];
-        require(msg.sender == agreement.admin);
-        require(agreement.rewardDistribution[recipient] != 0);
+        require(msg.sender == agreement.admin, "You don't have access");
+        require(agreement.rewardDistribution[recipient] != 0, "Recipient did not register for redeem");
 
         _tokenIds.increment();
         uint256 newItemId = _tokenIds.current();
         _mint(recipient, newItemId);
+        tokenIdtoCertificate[newItemId] = Certificate(_name, _projectName, agreement.amount, currency, block.timestamp);
     }
 }

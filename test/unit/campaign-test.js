@@ -25,7 +25,7 @@ describe("Deployment Test", function () {
     await erc20.transferInternal(owner.address, addr1.address, 6000);
     await erc20.transferInternal(owner.address, addr2.address, 8000);
 
-    CampaignStrategy = await ethers.getContractFactory("StandardCampaignMock");
+    CampaignStrategy = await ethers.getContractFactory("StandardCampaignStrategy");
     CampaignContract = await CampaignStrategy.deploy(
       owner.address,
       erc20.address,
