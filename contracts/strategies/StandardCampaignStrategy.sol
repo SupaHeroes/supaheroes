@@ -2,29 +2,21 @@
 pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../interfaces/ICampaign.sol";
 
 //contract template for initiating a project
-contract StandardCampaignStrategy is ICampaign {
+contract StandardCampaignStrategy is ICampaign, ERC20 {
     event LogPledge(address indexed by, address indexed to, uint256 amount, address currency, uint256 timestamp);
     event LogVote(address indexed by, address to, uint256 weight);
     event ChangedAdmin(address newAdmin, uint256 timestamp);
     event CampaignStopped(address indexed by, uint256 timestamp);
-
-    struct Vest {
-        uint256 claimDate;
-        uint256 amount;
-        IERC20 currency;
-    }
-
-    Vest[] public vests;
 
     ///@dev userDeposit is used to track how much each user has pledged to this campaign
     mapping(address => uint256) public userDeposit;
     uint256 public depositorsCount;
     mapping(address => bool) public votes;
     uint256 public numberOfVotes;
-    uint256 public claimed;
 
     ///@notice this keeps track of the origin factory which helps users to asses the legitimacy 
     ///of this specific campaign.
@@ -52,15 +44,15 @@ contract StandardCampaignStrategy is ICampaign {
 
     //put owner in constructor to use for initializing project
     constructor(
+        string memory _tokenSymbol,
         address _factory,
         address _currency,
         string memory _metadata,
         address _admin,
         uint256 _fundingEndTime,
         uint256 _fundTarget,
-        uint256 _fundingStartTime,
-        Vest[] memory _vests
-    ) {
+        uint256 _fundingStartTime
+    ) ERC20(_tokenSymbol, string(abi.encodePacked("fund.", _tokenSymbol))) {
         factory = _factory;
         supportedCurrency = IERC20(_currency);
         metadata = _metadata;
@@ -68,25 +60,11 @@ contract StandardCampaignStrategy is ICampaign {
         fundingTarget = _fundTarget;
         fundingStartTime = _fundingStartTime;
         fundingEndTime = _fundingEndTime;
-        for(uint i = 0; i < vests.length; i++){
-            Vest memory n = _vests[i];
-            vests.push(n);
-        }
-    }
-
-    function claimable() internal view returns (uint){
-        uint total = 0;
-        for(uint i = 0; i < vests.length; i++){
-            if(vests[i].claimDate <= block.timestamp){
-                total += vests[i].amount;
-            }
-        }
-
-        return total;
     }
 
     function changeMetadata(string memory newMetadata) external {
         require(msg.sender == admin, "You are not the campaign admin");
+        require(block.timestamp < fundingEndTime, "Campaign has already ended");
        metadata = newMetadata;
     }
 
@@ -101,6 +79,7 @@ contract StandardCampaignStrategy is ICampaign {
             depositorsCount++;
         }
         userDeposit[msg.sender] += amount;
+        _mint(msg.sender, amount);
     }
 
     //emergency function to stop the funding (and stop the project)
@@ -116,7 +95,7 @@ contract StandardCampaignStrategy is ICampaign {
         require(isCampaignStopped == false, "Campaign has already been stopped");
         votes[msg.sender] = true;
         numberOfVotes += 1;
-        if(depositorsCount / 2 < numberOfVotes) {
+        if(depositorsCount * 40/100 < numberOfVotes) {
             isCampaignStopped = true;
         }
     }
@@ -143,10 +122,10 @@ contract StandardCampaignStrategy is ICampaign {
 
     //function for returning the funds
     function withdrawFunds(uint256 amount) public returns (bool success) {
-        require(userDeposit[msg.sender] > 0, "You have no balance left to withdraw"); // guards up front
+        require(this.balanceOf(msg.sender) <= amount, "Not enough campaign token balance");
         require(fundingEndTime > block.timestamp || isCampaignStopped, "Campaign is still running");
-        userDeposit[msg.sender] -= amount; // optimistic accounting
-        IERC20(supportedCurrency).transferFrom(address(this), msg.sender, amount); // transfer
+        this.transferFrom(msg.sender, address(this), amount); // transfer from user to campaign
+        supportedCurrency.transferFrom(address(this), msg.sender, amount); // transfer from campaign to user
         return true;
     }
 
@@ -160,16 +139,9 @@ contract StandardCampaignStrategy is ICampaign {
         require(amount > 0, "Do not put 0 in amount");
         require(fundingEndTime < block.timestamp, "Crowdfunding campaign is still running");
         require(isCampaignStopped == false, "Campaign has been stopped");
-        require(amount <= IERC20(supportedCurrency).balanceOf(address(this)), "This campaign contract doesn't have enough balance");
+        require(amount <= supportedCurrency.balanceOf(address(this)), "This campaign contract doesn't have enough balance");
 
-        if(vests.length != 0){
-            require(claimable() > claimed, "Please wait for your vest date");
-            IERC20(supportedCurrency).transfer(to, amount);
-            claimed += amount;
-            return true;
-        }
-
-        IERC20(supportedCurrency).transfer(to, amount);
+        supportedCurrency.transfer(to, amount);
         return true;
     }
 }
