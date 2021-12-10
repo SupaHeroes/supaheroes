@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
@@ -20,7 +20,7 @@ import "./interfaces/ICampaign.sol";
     is meant to be platform specific, in this case, Supaheroes. For now, certificate is awarded manually
     by campaign admin. Feel free to fork/PR this contract.
     */
-contract RewardManager is ERC721, Ownable {    
+contract RewardManager is ERC1155, Ownable {    
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
@@ -47,8 +47,12 @@ contract RewardManager is ERC721, Ownable {
         string metadata;
     }
 
-    constructor() ERC721("Supahero Contributor Certificate", "SCC") {
+    constructor() ERC1155("") {
+        
+    }
 
+    function setUri(string memory _uri) external onlyOwner {
+        _setURI(_uri);
     }
 
     function whitelistCaller(address caller) external onlyOwner {
@@ -93,7 +97,7 @@ contract RewardManager is ERC721, Ownable {
 
         _tokenIds.increment();
         uint256 newItemId = _tokenIds.current();
-        _mint(recipient, newItemId);
+        _mint(recipient, 1, 1, "");
         tokenIdtoCertificate[newItemId] = Certificate(_name, _projectName, agreement.amount, currency, block.timestamp);
     }
 }
