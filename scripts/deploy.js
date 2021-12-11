@@ -12,19 +12,20 @@ async function main() {
 
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
-  // const Headquarter = await ethers.getContractFactory("Headquarter");
-  // const hq = await Headquarter.deploy();
+  const campaignMaster = await ethers.getContractFactory("StandardCampaignStrategy");
+  const cM = await campaignMaster.deploy();
+  const rewardMaster = await ethers.getContractFactory("RewardManager");
+  const rM = await rewardMaster.deploy();
+  const vestingMaster = await ethers.getContractFactory("VestingManager");
+  const vM = await vestingMaster.deploy();
 
-  // console.log("Headquarter address:", hq.address);
-
-  const factory = await ethers.getContractFactory("StandardCampaignFactory");
-  const fc = await factory.deploy();
-
-  // const station = await ethers.getContractFactory("Station");
-  // const st = await station.deploy();
-
+  const factory = await ethers.getContractFactory("CampaignFactory");
+  const fc = await factory.deploy(cM.address, rM.address, vM.address);
+  
+  console.log("Campaign Master address:", cM.address);
+  console.log("Reward Master address:", rM.address);
+  console.log("Vesting Master address:", vM.address);
   console.log("Factory address:", fc.address);
-  // console.log("Station address:", st.address);
 }
 
 main()
