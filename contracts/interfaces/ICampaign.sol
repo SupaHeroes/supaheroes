@@ -8,8 +8,4 @@ interface ICampaign {
     function payOut(address to, uint256 amount) external returns (bool);
 
     function changeAdmin(address newAdmin) external;
-
-    function whitelistVestingManager(address vestingManager) external;
-
-    function whitelistRewardManager(address rewardManager) external;
 }

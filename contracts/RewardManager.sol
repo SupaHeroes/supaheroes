@@ -5,10 +5,10 @@ import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "./strategies/StandardCampaignStrategy.sol";
+import '@openzeppelin/contracts/proxy/utils/Initializable.sol';
 
 /* 
     Reward Manager for Supaheroes.org
-    Author: Axel Devara
         
     ███████████████████████████████████████████████████████████
     █─▄▄▄▄█▄─██─▄█▄─▄▄─██▀▄─██─█─█▄─▄▄─█▄─▄▄▀█─▄▄─█▄─▄▄─█─▄▄▄▄█
@@ -16,10 +16,10 @@ import "./strategies/StandardCampaignStrategy.sol";
     ▀▄▄▄▄▄▀▀▄▄▄▄▀▀▄▄▄▀▀▀▄▄▀▄▄▀▄▀▄▀▄▄▄▄▄▀▄▄▀▄▄▀▄▄▄▄▀▄▄▄▄▄▀▄▄▄▄▄▀
     
     Creates a Supahero Contributor Certificate (SCC) as a proof of contribution. The certificate 
-    is meant to be platform specific which in this case, Supaheroes. For now, certificate is awarded manually
-    by campaign admin. Feel free to fork/PR this contract.
+    is meant to be platform specific which in this case, Supaheroes. Call functions here to
+    interact with rewards. Feel free to fork/PR this contract.
     */
-contract RewardManager is ERC1155 {    
+contract RewardManager is ERC1155, Initializable {    
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
@@ -28,18 +28,23 @@ contract RewardManager is ERC1155 {
 
     uint256 internal certificateId;
 
-    constructor(address _campaign, address _admin, string memory _uri, uint256[] memory quantities) ERC1155(_uri) {
+    constructor() ERC1155("") {
+       
+    }
+
+    function initialize(address _campaign, string memory _uri, uint256[] memory quantities) external initializer {
         campaign = _campaign;
-        admin = _admin;
+        admin = msg.sender;
         
         for(uint i = 0; i < quantities.length; i++){
             _mint(address(this), i, quantities[i], "");
         }
         certificateId = quantities.length + 1;
+
+        setUri(_uri);
     }
 
-    function setUri(string memory _uri) external {
-        require(msg.sender == admin);
+    function setUri(string memory _uri) internal {
         _setURI(_uri);
     }
 

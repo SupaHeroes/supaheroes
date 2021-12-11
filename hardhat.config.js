@@ -1,5 +1,6 @@
 require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-etherscan");
+require('hardhat-contract-sizer');
 require("dotenv").config();
 
 
@@ -26,6 +27,12 @@ module.exports = {
       runs: 200,
       enabled: true
     }
+  },
+  contractSizer: {
+    alphaSort: true,
+    disambiguatePaths: false,
+    runOnCompile: true,
+    strict: true,
   },
   defaultNetwork: "hardhat",
   networks: {

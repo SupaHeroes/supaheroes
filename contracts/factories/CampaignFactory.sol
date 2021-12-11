@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-import "../strategies/StandardCampaignStrategy.sol";
-import "../VestingManager.sol";
-import "../RewardManager.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /* 
     CampaignFactory for Supaheroes.org
-    Author: Axel Devara
         
     ███████████████████████████████████████████████████████████
     █─▄▄▄▄█▄─██─▄█▄─▄▄─██▀▄─██─█─█▄─▄▄─█▄─▄▄▀█─▄▄─█▄─▄▄─█─▄▄▄▄█
@@ -16,68 +14,42 @@ import "../RewardManager.sol";
     
     A factory contract to create campaign from various strategies and also making the agreements
     for RewardManager contract. This contract is crucial to the frontend because most of the events
-    for indexing will come from this contract. In the future, an iteration based on Proxy architecture
-    can be made to save gas.
+    for indexing will come from this contract. 
     */
-contract CampaignFactory  {
-    //event used to index created campaigns
-    event CampaignCreated(
-        address campaignAddress,
-        string metadata,
-        address indexed currency,
-        uint256 indexed fundingEndTime,
-        uint256 indexed fundingStartTime,
-        uint256 timestamp
-    );
-    event LogCreator(address indexed creator, address campaign);
 
-    //keeping track of the campaign deployer
-    mapping(address => address) public deployerOf;
+contract CampaignFactory is Ownable {
+    address public master;
+    address public rewardMaster;
+    address public vestingMaster;
 
-    //number of deployed campaigns
-    uint256 public deployedCampaigns;
+    event ContractLog(uint);
+    event NewCampaign(address indexed contractAddress, address indexed creator, address rewardMaster, address vestingMaster);
 
-    function deployStandardCampaign(
-        string calldata _metadata,
-        address _currency,
-        uint256 _fundingEndTime,
-        uint256 _fundTarget,
-        uint256 _fundingStartTime
-    ) external returns (bool) {
-        //deploy the campaign
-        StandardCampaignStrategy project = new StandardCampaignStrategy(
-            address(this),
-            _currency,
-            _metadata,
-            msg.sender,
-            _fundingEndTime,
-            _fundTarget,
-            _fundingStartTime
-        );
+    using Clones for address;
 
-        deployerOf[address(project)] = msg.sender;
-        emit LogCreator(msg.sender, address(project));
-        deployedCampaigns += 1;
-        emit CampaignCreated(
-            address(this),
-            _metadata,
-            _currency,
-            _fundingEndTime,
-            _fundingStartTime,
-            block.timestamp
-        );
-        return true;
+    constructor(address _master, address _master2, address _master3) {
+        master = _master;
+        rewardMaster = _master2;
+        vestingMaster = _master3;
     }
 
-    function deployVestingManager(VestingManager.Vest[] calldata vestings, address campaign) external {
-        require(msg.sender == deployerOf[campaign]);
-        VestingManager _vestingManager = new VestingManager(vestings, ICampaign(campaign), msg.sender);
-        ICampaign(campaign).whitelistVestingManager(address(_vestingManager));
+    function changeMasters(address _newMaster, address _newReward, address _newVesting) external onlyOwner {
+        master = _newMaster;
+        rewardMaster = _newReward;
+        _newVesting = _newVesting;
+        emit ContractLog(block.timestamp);
     }
 
-    function deployRewardManager(address campaign, string calldata uri, uint256[] calldata quantities) external {
-        require(msg.sender == deployerOf[campaign]);
-        RewardManager _rewardManager = new RewardManager(campaign, msg.sender, uri, quantities);
-        ICampaign(campaign).whitelistRewardManager(address(_rewardManager));
+    function createCampaign() external payable {
+        address newAddress = master.clone();
+        address reward = rewardMaster.clone();
+        emit NewCampaign(newAddress, msg.sender, reward, address(0));
+    }
+
+    function createCampaignWithVesting() external payable {
+        address newAddress = master.clone();
+        address reward = rewardMaster.clone();
+        address vest = vestingMaster.clone();
+        emit NewCampaign(newAddress, msg.sender, reward, vest);
     }
 }
