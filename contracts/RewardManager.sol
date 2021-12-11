@@ -3,9 +3,8 @@ pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "./interfaces/ICampaign.sol";
+import "./strategies/StandardCampaignStrategy.sol";
 
 /* 
     Reward Manager for Supaheroes.org
@@ -17,87 +16,57 @@ import "./interfaces/ICampaign.sol";
     ▀▄▄▄▄▄▀▀▄▄▄▄▀▀▄▄▄▀▀▀▄▄▀▄▄▀▄▀▄▀▄▄▄▄▄▀▄▄▀▄▄▀▄▄▄▄▀▄▄▄▄▄▀▄▄▄▄▄▀
     
     Creates a Supahero Contributor Certificate (SCC) as a proof of contribution. The certificate 
-    is meant to be platform specific, in this case, Supaheroes. For now, certificate is awarded manually
+    is meant to be platform specific which in this case, Supaheroes. For now, certificate is awarded manually
     by campaign admin. Feel free to fork/PR this contract.
     */
-contract RewardManager is ERC1155, Ownable {    
+contract RewardManager is ERC1155 {    
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
-    mapping(address => bool) internal whitelistedCaller;
-    mapping(address => bool) internal whitelistedCampaign;
-    mapping(address => Agreement[]) public campaignToAgreements;
-    mapping(uint256 => Certificate) public tokenIdtoCertificate;
+    address public campaign;
+    address public admin;
 
-    struct Certificate {
-        string name;
-        string projectName;
-        uint256 amount;
-        address currency;
-        uint256 timestamp;
-    }
+    uint256 internal certificateId;
 
-    struct Agreement {
-        uint256 amount;
-        uint256 limit;
-        uint256 redeemCount;
-        address admin;
-        mapping(address => uint) rewardDistribution;
-        mapping(address => string) rewardData;
-        string metadata;
-    }
-
-    constructor() ERC1155("") {
+    constructor(address _campaign, address _admin, string memory _uri, uint256[] memory quantities) ERC1155(_uri) {
+        campaign = _campaign;
+        admin = _admin;
         
+        for(uint i = 0; i < quantities.length; i++){
+            _mint(address(this), i, quantities[i], "");
+        }
+        certificateId = quantities.length + 1;
     }
 
-    function setUri(string memory _uri) external onlyOwner {
+    function setUri(string memory _uri) external {
+        require(msg.sender == admin);
         _setURI(_uri);
     }
 
-    function whitelistCaller(address caller) external onlyOwner {
-        whitelistedCaller[caller] = true;
+    function redeemForVote(uint amount, uint id) external {
+        StandardCampaignStrategy(campaign).voteRefund(amount);
+        safeTransferFrom(msg.sender, address(this), id, amount, "");
     }
 
-    function whitelistCampaign(ICampaign campaignAddress) external {
-        require(whitelistedCaller[msg.sender]);
-        whitelistedCampaign[address(campaignAddress)] = true;
+    function unVote(uint amount, uint id) external {
+        StandardCampaignStrategy(campaign).unvote(amount);
+        safeTransferFrom(address(this), msg.sender, id, amount, "");
     }
 
-    function createAgreement(uint _amt, uint _limit, string memory _metadata, address _campaign, address _admin) external {
-        require(whitelistedCaller[msg.sender]);
-        Agreement storage newAgreement = campaignToAgreements[_campaign][campaignToAgreements[_campaign].length];
-            newAgreement.amount = _amt;
-            newAgreement.limit = _limit;
-            newAgreement.metadata = _metadata;
-            newAgreement.admin = _admin;
+    function redeem(uint amount, uint id) external { 
+        StandardCampaignStrategy(campaign).withdrawFunds(amount);
+        safeTransferFrom(msg.sender, address(this), id, amount, "");
     }
 
-    function registerForRedeem(address campaignAddress, uint256 agreementId, string memory userData) external {
-        require(campaignAddress != address(0), "Empty address");
-        require(whitelistedCampaign[campaignAddress], "Campaign is not registered");
-        require(campaignToAgreements[campaignAddress].length > agreementId, "Wrong argument Id");
-        Agreement storage agreement = campaignToAgreements[campaignAddress][agreementId];
-        require(IERC20(campaignAddress).balanceOf(msg.sender) >= agreement.amount, "You don't have enough balance");
-        require(msg.sender != agreement.admin, "Admin should not participate");
-        require(agreement.redeemCount < agreement.limit, "No more slots left");
-
-        IERC20(campaignAddress).transfer(address(this), agreement.amount);
-
-        agreement.redeemCount++;
-        agreement.rewardData[msg.sender] = userData;
-        agreement.rewardDistribution[campaignAddress] = agreement.redeemCount;
+    function approveReward(uint amount, uint id) external { 
+        StandardCampaignStrategy(campaign).withdrawFunds(amount);
+        _burn(msg.sender, id, amount);
+        _mint(msg.sender, certificateId, 1, "");
     }
 
-    function awardCertificate(address campaignAddress, uint256 agreementId, address recipient, string memory _name, string memory _projectName, address currency) external {
-        require(recipient != address(0), "Empty address");
-        Agreement storage agreement = campaignToAgreements[campaignAddress][agreementId];
-        require(msg.sender == agreement.admin, "You don't have access");
-        require(agreement.rewardDistribution[recipient] != 0, "Recipient did not register for redeem");
-
-        _tokenIds.increment();
-        uint256 newItemId = _tokenIds.current();
-        _mint(recipient, 1, 1, "");
-        tokenIdtoCertificate[newItemId] = Certificate(_name, _projectName, agreement.amount, currency, block.timestamp);
+    function pledgeForReward(uint amount, uint id, address token) external {
+        require(this.balanceOf(address(this), id) > 0);
+        StandardCampaignStrategy(campaign).pledge(amount, token);
+        safeTransferFrom(address(this), msg.sender, id, 1, "");
     }
 }

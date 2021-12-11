@@ -2,7 +2,7 @@
 pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "../interfaces/ICampaign.sol";
 
  /* 
@@ -19,14 +19,14 @@ import "../interfaces/ICampaign.sol";
     If the campaign turns out to be a scam, users can stake their fund. token as a vote to stop the project from continuing.
     If there are 40% out of totalSupply() .fund token staked, the campaign will stop and users will be able to redeem for their first pledged currency.  
     */
-contract StandardCampaignStrategy is ICampaign, ERC20 {
+contract StandardCampaignStrategy is ICampaign {
     event LogPledge(address indexed by, address indexed to, uint256 amount, address currency, uint256 timestamp);
     event LogVote(address indexed by, address to, uint256 weight);
     event ChangedAdmin(address newAdmin, uint256 timestamp);
     event CampaignStopped(address indexed by, uint256 timestamp);
 
-    mapping(address => uint) public stakes;
-    uint256 totalStaked;
+    uint256 public totalWeight;
+    uint256 public votedWeight;
 
     ///@notice this keeps track of the origin factory which helps users to asses the legitimacy 
     ///of this specific campaign.
@@ -47,13 +47,10 @@ contract StandardCampaignStrategy is ICampaign, ERC20 {
 
     bool public isCampaignStopped = false;
 
-    modifier onlyPledgers {
-        require(this.balanceOf(msg.sender) > 0);
-        _;
-    }
+    address public vestingManager;
+    address public rewardManager;
 
     constructor(
-        string memory _tokenSymbol,
         address _factory,
         address _currency,
         string memory _metadata,
@@ -61,7 +58,7 @@ contract StandardCampaignStrategy is ICampaign, ERC20 {
         uint256 _fundingEndTime,
         uint256 _fundTarget,
         uint256 _fundingStartTime
-    ) ERC20(_tokenSymbol, string(abi.encodePacked("fund.", _tokenSymbol))) {
+    )  {
         require(_factory != address(0), "Unknown factory");
         require(_fundTarget > 0, "Fund target cannot be 0");
         require(_currency != address(0), "Needs to specify currency");
@@ -74,6 +71,24 @@ contract StandardCampaignStrategy is ICampaign, ERC20 {
         fundingTarget = _fundTarget;
         fundingStartTime = _fundingStartTime;
         fundingEndTime = _fundingEndTime;
+    }
+
+    modifier onlyRewardManager() {
+        require(rewardManager != address(0));
+        require(msg.sender == rewardManager);
+        _;
+    }
+
+    function whitelistVestingManager(address _vestingManager) external override {
+        require(msg.sender == factory);
+        require(vestingManager == address(0));
+        vestingManager = _vestingManager;
+    }
+
+    function whitelistRewardManager(address _rewardManager) external override {
+        require(msg.sender == factory);
+        require(rewardManager == address(0));
+        rewardManager = _rewardManager;
     }
 
     function changeMetadata(string memory newMetadata) external {
@@ -89,8 +104,7 @@ contract StandardCampaignStrategy is ICampaign, ERC20 {
         require(fundingEndTime > block.timestamp, "Funding ended");
 
         IERC20(token).transferFrom(msg.sender, address(this), amount);
-        
-        _mint(msg.sender, amount);
+        totalWeight += amount;        
     }
 
     //emergency function to stop the funding (and stop the project)
@@ -102,21 +116,18 @@ contract StandardCampaignStrategy is ICampaign, ERC20 {
         fundingEndTime = block.timestamp;
     }
 
-    function voteRefund(uint amount) external onlyPledgers {
+    function voteRefund(uint weight) external onlyRewardManager {
         require(isCampaignStopped == false, "Campaign has already been stopped");
-        this.transfer(address(this), amount);
-        stakes[msg.sender] = amount;
-        totalStaked += amount;
-        if(totalStaked * 40/100 < this.totalSupply()) {
+        // this.transfer(address(this), amount);
+        votedWeight += weight;
+        if(votedWeight  < totalWeight * 40/100) {
             isCampaignStopped = true;
         }
     }
 
-    function unstake(uint amount) external {
-        require(stakes[msg.sender] > 0, "You have no stakes");
-        totalStaked -= amount;
-        stakes[msg.sender] -= amount;
-        this.transfer(msg.sender, amount);
+    function unvote(uint weight) external onlyRewardManager {
+        require(isCampaignStopped == false, "Campaign has already been stopped");
+        votedWeight -= weight;
     }
 
     function getProjectDetails()
@@ -135,10 +146,10 @@ contract StandardCampaignStrategy is ICampaign, ERC20 {
     }
 
     //function for returning the funds
-    function withdrawFunds(uint256 amount) public returns (bool success) {
-        require(this.balanceOf(msg.sender) <= amount, "Not enough campaign token balance");
+    function withdrawFunds(uint256 amount) external onlyRewardManager returns (bool success) {
+        require(amount > 0, "Cannot withdraw 0");
         require(isCampaignStopped, "Campaign is still running");
-        this.transferFrom(msg.sender, address(this), amount); // transfer from user to campaign
+        totalWeight -= amount;
         supportedCurrency.transferFrom(address(this), msg.sender, amount); // transfer from campaign to user
         return true;
     }
@@ -149,6 +160,7 @@ contract StandardCampaignStrategy is ICampaign, ERC20 {
     }
 
     function payOut(address to,uint256 amount) external override returns (bool success) {
+        require(vestingManager == address(0) || msg.sender == vestingManager, "Use payOutClaimable function instead");
         require(msg.sender == admin, "You are not the admin of the campaign");
         require(amount > 0, "Do not put 0 in amount");
         require(fundingEndTime < block.timestamp, "Crowdfunding campaign is still running");
