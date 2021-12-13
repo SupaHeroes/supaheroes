@@ -15,24 +15,49 @@ import "@openzeppelin/contracts/access/Ownable.sol";
     A factory contract to create campaign from various strategies and also making the agreements
     for RewardManager contract. This contract is crucial to the frontend because most of the events
     for indexing will come from this contract. 
+
+    This contract follows EIP-1167 for more information see https://eips.ethereum.org/EIPS/eip-1167
     */
 
+/**Supaheroes Campaign Factory */
 contract CampaignFactory is Ownable {
+
+    //StandardCampaignStrategy master contract address
     address public master;
+    //rewardManager master contract address
     address public rewardMaster;
+    //vestingManager master contract address
     address public vestingMaster;
 
     event ContractLog(uint);
     event NewCampaign(address indexed contractAddress, address indexed creator, address rewardMaster, address vestingMaster);
 
+    //clones library from OpenZeppelin
     using Clones for address;
 
+    /**
+    Sets master contract addresses for each components. A supaheroes campaign consists of 3 components:
+        - Strategy contract
+        - Reward manager contract
+        - Vesting manager contract(Optional) 
+    
+    @param _master Campaign strategy contract
+    @param _master2 Reward manager contract
+    @param _master3 Vesting manager contract
+    */
     constructor(address _master, address _master2, address _master3) {
         master = _master;
         rewardMaster = _master2;
         vestingMaster = _master3;
     }
 
+    /**
+    @notice Changes the master addresses
+    @dev Calling this contract should be done through multisig/gnosis
+    @param _newMaster Campaign strategy contract
+    @param _newReward Reward manager contract
+    @param _newVesting Vesting manager contract
+     */
     function changeMasters(address _newMaster, address _newReward, address _newVesting) external onlyOwner {
         master = _newMaster;
         rewardMaster = _newReward;
@@ -40,12 +65,20 @@ contract CampaignFactory is Ownable {
         emit ContractLog(block.timestamp);
     }
 
+    /**
+    @notice Creates a campaign strategy contract + reward manager contract
+    @dev Make sure to initialize each contracts before taken by other people. Important! 
+     */
     function createCampaign() external payable {
         address newAddress = master.clone();
         address reward = rewardMaster.clone();
         emit NewCampaign(newAddress, msg.sender, reward, address(0));
     }
 
+    /**
+    @notice Creates a campaign strategy contract + reward manager contract + vesting manager contract
+    @dev Make sure to initialize each contracts before taken by other people. Important! 
+     */
     function createCampaignWithVesting() external payable {
         address newAddress = master.clone();
         address reward = rewardMaster.clone();

@@ -14,40 +14,62 @@ import '@openzeppelin/contracts/proxy/utils/Initializable.sol';
     █▄▄▄▄─██─██─███─▄▄▄██─▀─██─▄─██─▄█▀██─▄─▄█─██─██─▄█▀█▄▄▄▄─█
     ▀▄▄▄▄▄▀▀▄▄▄▄▀▀▄▄▄▀▀▀▄▄▀▄▄▀▄▀▄▀▄▄▄▄▄▀▄▄▀▄▄▀▄▄▄▄▀▄▄▄▄▄▀▄▄▄▄▄▀
     
-    Creates a standard campaign strategy where pledgers receive ERC20 tokens (.fund token) based on their contribution.
-    This token will be used for many things such as trading, voting, and redeem for SCC NFT after the campaign ends.
-    If the campaign turns out to be a scam, users can stake their fund. token as a vote to stop the project from continuing.
-    If there are 40% out of totalSupply() .fund token staked, the campaign will stop and users will be able to redeem for their first pledged currency.  
+    Creates a standard campaign for projects that require crowdfunding. Pledgers can safely
+    pledge through this smart contract or through reward manager to receive reward and voting power.
+    If found to be a fraud, campaign can be stopped by 40% quorum through voting process.
+
+    * Standard campaign strategy requires a reward manager
+    * Vesting manager is optional
+    * Vesting is recommended as it gives confidence to supporters
+    * Metadata standard can be seen on Supaheroes docs
     */
     
+/** @title Supaheroes Standard Campaign Strategy */
 contract StandardCampaignStrategy is ICampaign, Initializable {
     event LogPledge(address indexed by, address indexed to, uint256 amount, address currency, uint256 timestamp);
     event LogVote(address indexed by, address to, uint256 weight);
     event ChangedAdmin(address newAdmin, uint256 timestamp);
     event CampaignStopped(address indexed by, uint256 timestamp);
 
+    //total voting weight
     uint256 public totalWeight;
+    //total voted weight
     uint256 public votedWeight;
 
-    ///@notice project metadata can be hosted on IPFS or centralized storages.
+    //project admin
     address public admin;
-    ///@notice the start time of crowdfunding session
+    //the start time of crowdfunding session
     uint256 public fundingStartTime;
-    ///@notice the end of crowdfunding session time
+    //the end of crowdfunding session time
     uint256 public fundingEndTime;
-    ///@notice the amount of funds to reach a goal
+    //the amount of funds to reach a goal
     uint256 public fundingTarget;
-    ///@notice ipfs url to campaign information
+    //ipfs url to campaign information
     string public metadata;
 
-    ///@notice put in the prefered currency for this campaign(recommended: stablecoins such as USDC/DAI)
+    //put in the prefered currency for this campaign(recommended: stablecoins such as USDC/DAI)
     IERC20 public supportedCurrency;
 
+    //is the campaign running?
     bool public isCampaignStopped = false;
 
+    //address of the vesting manager contract
     address public vestingManager;
+    //address of the reward manager contract
     address public rewardManager;
 
+    /**
+     * @dev StandardCampaignStrategy follows EIP-1167 Minimal Proxy use this to initialize StandardCampaign instead of constructor
+     * for more information head over to https://eips.ethereum.org/EIPS/eip-1167
+     * 
+     * @param _currency sets the currency for the campaign
+     * @param _metadata off-chain campaign data just like ERC721. Recommendation: host on IPFS
+     * @param _fundingEndTime sets campaign end time
+     * @param _fundTarget funding goal amount
+     * @param _fundingStartTime when the campaign will start
+     * @param _vestingManager the vesting manager. Set to address(0) if there is no vesting manager
+     * @param _rewardManager the reward manager. required!
+     */
     function initialize(
         address _currency,
         string memory _metadata,
@@ -77,31 +99,54 @@ contract StandardCampaignStrategy is ICampaign, Initializable {
         _;
     }
 
-    function changeMetadata(string memory newMetadata) external {
+    modifier onlyAdmin() {
         require(msg.sender == admin, "Only admin");
+        _;
+    }
+
+    /**
+     * @notice Campaign owners are able to change the metadata of the campaign
+     * @param newMetadata the new metadata uri
+     */
+    function changeMetadata(string memory newMetadata) external onlyAdmin {
         require(block.timestamp < fundingEndTime, "Campaign ended");
        metadata = newMetadata;
     }
 
-    function pledge(uint256 amount, address token) external override {
+    /**
+     * @notice Pledge through this contract is basically a donation. You will not receive a reward or a voting power
+     * thus is not recommended unless you choose to do so. Pledge through reward manager instead to receive reward and voting power.
+     * @param amount the amount of fund
+     * @param weight the voting weight (see RewardManager.sol)
+     * @param token currency address
+     */
+    function pledge(uint256 amount, uint256 weight, address token) external override {
         require(amount > 0, "Amount 0");
         require(msg.sender != admin, "Admin cannot pledge");
         require(IERC20(token) == supportedCurrency, "Currency not supported");
         require(fundingEndTime > block.timestamp, "Funding ended");
 
-        IERC20(token).transferFrom(msg.sender, address(this), amount);
-        totalWeight += amount;        
+        if(msg.sender == rewardManager){
+            totalWeight += weight; //re-entrancy guard
+        }
+        IERC20(token).transferFrom(msg.sender, address(this), amount);       
     }
 
-    //emergency function to stop the funding (and stop the project)
-    function stopCampaign() external {
-        require(msg.sender == admin, "Not admin");
+    /**
+     * @notice Circuit breaker function to stop the campaign
+     */
+    function stopCampaign() external onlyAdmin {
         require(fundingEndTime > block.timestamp, "campaign ended");
         require(isCampaignStopped == false, "campaign stopped");
         isCampaignStopped = true;
         fundingEndTime = block.timestamp;
     }
 
+    /**
+     * @notice Pledgers have the ability to vote for a refund and stop the campaign using the given ERC1155 token
+     * see RewardManager.sol for more information
+     * @param weight the voting weight (see rewardManager.sol)
+     */
     function voteRefund(uint weight) external onlyRewardManager {
         require(isCampaignStopped == false, "Campaign stopped");
         // this.transfer(address(this), amount);
@@ -111,11 +156,18 @@ contract StandardCampaignStrategy is ICampaign, Initializable {
         }
     }
 
+    /**
+     * @notice Call this function to unvote
+     * @param weight the voting weight (see rewardManager.sol)
+     */
     function unvote(uint weight) external onlyRewardManager {
         require(isCampaignStopped == false, "Campaign stopped");
         votedWeight -= weight;
     }
 
+    /**
+     * @notice Helper function to get project details
+     */
     function getProjectDetails()
         public
         view
@@ -131,27 +183,30 @@ contract StandardCampaignStrategy is ICampaign, Initializable {
         return (admin, fundingTarget, metadata, address(this).balance, fundingEndTime, fundingStartTime);
     }
 
-    //function for returning the funds
+    /**
+     * @notice Once a campaign is stopped, pledgers will be able to withdraw their funds.
+     * only callable through reward manager
+     * @param amount the amount to withdraw
+     */
     function withdrawFunds(uint256 amount) external onlyRewardManager returns (bool success) {
         require(amount > 0, "Cannot withdraw 0");
         require(isCampaignStopped, "Campaign is still running");
-        totalWeight -= amount;
+        totalWeight -= amount; //re-entrancy guard
         supportedCurrency.transferFrom(address(this), msg.sender, amount); // transfer from campaign to user
         return true;
     }
 
-    function changeAdmin(address newAdmin) external override {
-        require(msg.sender == admin);
-        admin = newAdmin;
-    }
 
-    function payOut(address to,uint256 amount) external override returns (bool success) {
+    /**
+     * @notice Receive the crowdfund after campaign ends. If vested, this function can only be called from vesting manager contract
+     * @param to transfer to address
+     * @param amount the amount to transfer
+     */
+    function payOut(address to,uint256 amount) external override onlyAdmin returns (bool success) {
         require(vestingManager == address(0) || msg.sender == vestingManager, "Use payOutClaimable");
-        require(msg.sender == admin, "You are not the admin of the campaign");
         require(amount > 0, "0 amount");
         require(fundingEndTime < block.timestamp, "Campaign is still running");
         require(isCampaignStopped == false, "Campaign has been stopped");
-        require(amount <= supportedCurrency.balanceOf(address(this)), "Not enough balance");
 
         supportedCurrency.transfer(to, amount);
         return true;
