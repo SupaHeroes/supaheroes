@@ -121,27 +121,39 @@ contract RewardManager is ERC1155, Initializable {
 
     /**
      * @notice Users are able to refund in case the quorum has decided to suspend the campaign
+     * if the receipt is not from the original owner, the refund value is based on tiers
      * 
      * @param id the ERC1155 token id that will be sent back to this contract
      * @param amount the amount to refund
      */
     function refund(uint amount, uint id) external notAdmin { 
-        require(userPledgedAmount[msg.sender] >= amount, "Wrong amount");
-        require(amount >= idsToTiers[id],  "Wrong token");
-        campaign.withdrawFunds(amount);
-        safeTransferFrom(msg.sender, address(this), id, amount, "");
+        require(amount >= idsToTiers[id],  "Wrong receipt");
+        //check if user is the original pledger or not
+        if(userPledgedAmount[msg.sender] == 0 && this.balanceOf(msg.sender, id) > 0){
+            campaign.withdrawFunds(idsToTiers[id]);
+        } else {
+            require(userPledgedAmount[msg.sender] >= amount, "Wrong amount");
+            campaign.withdrawFunds(amount);
+        }        
+        safeTransferFrom(msg.sender, address(this), id, 1, "");
     }
 
     /**
      * @notice Once reward has been received, users can approve and redeem their receipt token for certificate
+     * if the sender is not the original pledger, the certificate's amount param will be based the the receipt's tier
      * 
      * @param id the ERC1155 token id that will be burned
      * @param name the name of the sender for certificate
      */
     function approveReward(uint id, string memory name) external notAdmin { 
+        //check if the user is the original pledger
+        if(userPledgedAmount[msg.sender] == 0 && this.balanceOf(msg.sender, id) > 0) {
+            certificateOwner[msg.sender] = Certificate(projectName, name, msg.sender, block.timestamp, idsToTiers[id], address(campaign.supportedCurrency()));
+        } else {
+            certificateOwner[msg.sender] = Certificate(projectName, name, msg.sender, block.timestamp, userPledgedAmount[msg.sender], address(campaign.supportedCurrency()));
+        }
         _burn(msg.sender, id, 1);
         _mint(msg.sender, certificateId, 1, "");
-        certificateOwner[msg.sender] = Certificate(projectName, name, msg.sender, block.timestamp, userPledgedAmount[msg.sender], address(campaign.supportedCurrency()));
     }
 
     /**

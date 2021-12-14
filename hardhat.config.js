@@ -37,8 +37,8 @@ module.exports = {
   defaultNetwork: "hardhat",
   networks: {
     kovan: {
-      url: process.env.ALCHEMY_API_URL || '',
-      accounts: [`0x${process.env.KOVAN_PRIVATE_KEY}`]
+      url: process.env.NODE_KEY || '',
+      accounts: [`0x${process.env.PRIVATE_KEY}`]
     }
   },
   etherscan: {
