@@ -130,10 +130,10 @@ contract RewardManager is ERC1155, Initializable {
         require(amount >= idsToTiers[id],  "Wrong receipt");
         //check if user is the original pledger or not
         if(userPledgedAmount[msg.sender] == 0 && this.balanceOf(msg.sender, id) > 0){
-            campaign.withdrawFunds(idsToTiers[id]);
+            campaign.withdrawFunds(idsToTiers[id], msg.sender);
         } else {
             require(userPledgedAmount[msg.sender] >= amount, "Wrong amount");
-            campaign.withdrawFunds(amount);
+            campaign.withdrawFunds(amount, msg.sender);
         }        
         safeTransferFrom(msg.sender, address(this), id, 1, "");
     }
@@ -165,7 +165,7 @@ contract RewardManager is ERC1155, Initializable {
         require(this.balanceOf(msg.sender, id) == 0, "You already pledged this tier");
         require(this.balanceOf(address(this), id) > 0);
         require(amount >= idsToTiers[id]);
-        campaign.pledge(amount, idsToTiers[id], token);
+        campaign.pledge(amount, idsToTiers[id], token, msg.sender);
         userPledgedAmount[msg.sender] += amount;
         safeTransferFrom(address(this), msg.sender, id, 1, "");
     }

@@ -27,9 +27,9 @@ import '@openzeppelin/contracts/proxy/utils/Initializable.sol';
 /** @title Supaheroes Standard Campaign Strategy */
 contract StandardCampaignStrategy is ICampaign, Initializable {
     event LogPledge(address indexed by, address indexed to, uint256 amount, address currency, uint256 timestamp);
-    event LogVote(address indexed by, address to, uint256 weight);
-    event ChangedAdmin(address newAdmin, uint256 timestamp);
-    event CampaignStopped(address indexed by, uint256 timestamp);
+    event LogRefund(address indexed by, uint256 amount, uint256 timestamp);
+    event LogVote(uint256 indexed at, address to, uint256 weight);
+    event CampaignStopped(uint256 indexed timestamp);
 
     //total voting weight
     uint256 public totalWeight;
@@ -120,7 +120,7 @@ contract StandardCampaignStrategy is ICampaign, Initializable {
      * @param weight the voting weight (see RewardManager.sol)
      * @param token currency address
      */
-    function pledge(uint256 amount, uint256 weight, address token) external override {
+    function pledge(uint256 amount, uint256 weight, address token, address from) external override {
         require(amount > 0, "Amount 0");
         require(msg.sender != admin, "Admin cannot pledge");
         require(IERC20(token) == supportedCurrency, "Currency not supported");
@@ -129,7 +129,8 @@ contract StandardCampaignStrategy is ICampaign, Initializable {
         if(msg.sender == rewardManager){
             totalWeight += weight; //re-entrancy guard
         }
-        IERC20(token).transferFrom(msg.sender, address(this), amount);       
+        IERC20(token).transferFrom(msg.sender, address(this), amount); 
+        emit LogPledge(from, address(this), amount, token, block.timestamp);      
     }
 
     /**
@@ -140,6 +141,7 @@ contract StandardCampaignStrategy is ICampaign, Initializable {
         require(isCampaignStopped == false, "campaign stopped");
         isCampaignStopped = true;
         fundingEndTime = block.timestamp;
+        emit CampaignStopped(block.timestamp);
     }
 
     /**
@@ -149,11 +151,11 @@ contract StandardCampaignStrategy is ICampaign, Initializable {
      */
     function voteRefund(uint weight) external onlyRewardManager {
         require(isCampaignStopped == false, "Campaign stopped");
-        // this.transfer(address(this), amount);
         votedWeight += weight;
         if(votedWeight  < totalWeight * 40/100) {
             isCampaignStopped = true;
         }
+        emit LogVote(block.timestamp ,address(this), weight);
     }
 
     /**
@@ -188,11 +190,12 @@ contract StandardCampaignStrategy is ICampaign, Initializable {
      * only callable through reward manager
      * @param amount the amount to withdraw
      */
-    function withdrawFunds(uint256 amount) external onlyRewardManager returns (bool success) {
+    function withdrawFunds(uint256 amount, address recipient) external onlyRewardManager returns (bool success) {
         require(amount > 0, "Cannot withdraw 0");
         require(isCampaignStopped, "Campaign is still running");
         totalWeight -= amount; //re-entrancy guard
-        supportedCurrency.transferFrom(address(this), msg.sender, amount); // transfer from campaign to user
+        supportedCurrency.transferFrom(address(this), recipient, amount); // transfer from campaign to user
+        emit LogRefund(recipient, amount, block.timestamp);
         return true;
     }
 
