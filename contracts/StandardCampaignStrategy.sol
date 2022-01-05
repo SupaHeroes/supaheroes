@@ -3,7 +3,7 @@ pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
-import "../interfaces/ICampaign.sol";
+import "./interfaces/ICampaign.sol";
 import '@openzeppelin/contracts/proxy/utils/Initializable.sol';
 
  /* 
@@ -81,6 +81,7 @@ contract StandardCampaignStrategy is ICampaign, Initializable {
     ) public initializer {
         require(_fundTarget > 0, "Fund target 0");
         require(_currency != address(0), "No currency");
+        require(_rewardManager != address(0), "No reward manager");
         require(block.timestamp < _fundingStartTime, "start before this timestamp");
         require(_fundingStartTime < _fundingEndTime, "ends before start date");
         supportedCurrency = IERC20(_currency);
@@ -129,7 +130,7 @@ contract StandardCampaignStrategy is ICampaign, Initializable {
         if(msg.sender == rewardManager){
             totalWeight += weight; //re-entrancy guard
         }
-        IERC20(token).transferFrom(msg.sender, address(this), amount); 
+        IERC20(token).transferFrom(from, address(this), amount); 
         emit LogPledge(from, address(this), amount, token, block.timestamp);      
     }
 
@@ -193,6 +194,7 @@ contract StandardCampaignStrategy is ICampaign, Initializable {
     function withdrawFunds(uint256 amount, address recipient) external onlyRewardManager returns (bool success) {
         require(amount > 0, "Cannot withdraw 0");
         require(isCampaignStopped, "Campaign is still running");
+        supportedCurrency.approve(msg.sender, amount);
         totalWeight -= amount; //re-entrancy guard
         supportedCurrency.transferFrom(address(this), recipient, amount); // transfer from campaign to user
         emit LogRefund(recipient, amount, block.timestamp);
@@ -211,6 +213,7 @@ contract StandardCampaignStrategy is ICampaign, Initializable {
         require(fundingEndTime < block.timestamp, "Campaign is still running");
         require(isCampaignStopped == false, "Campaign has been stopped");
 
+        supportedCurrency.approve(msg.sender, amount);
         supportedCurrency.transfer(to, amount);
         return true;
     }

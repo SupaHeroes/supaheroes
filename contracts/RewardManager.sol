@@ -2,7 +2,8 @@
 pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "./strategies/StandardCampaignStrategy.sol";
+import "./StandardCampaignStrategy.sol";
+import "./CC.sol";
 import '@openzeppelin/contracts/proxy/utils/Initializable.sol';
 
 /* 
@@ -31,30 +32,17 @@ contract RewardManager is ERC1155, Initializable {
     //campaign admin
     address public admin;
 
+    //SCC
+    ContributionCertificate public cc;
+
     //How much each token type is worth based on tiers set by campaign admin
     mapping(uint => uint) idsToTiers;
-
-    //token id for certificate this is important for ERC1155 Uri
-    uint256 internal certificateId;
 
     //project name string for certificate purpose
     string public projectName;
 
     //record of user's pledge amount
     mapping(address => uint256) userPledgedAmount;
-
-    //on-chain certificate data when you redeem
-    struct Certificate {
-        string projectName;
-        string donatorName;
-        address donatorAddress;
-        uint256 time;
-        uint256 amount;
-        address tokenAddress;
-    }
-
-    //mapping certificate ownership
-    mapping(address => Certificate) public certificateOwner;
 
     //mapping to record how much token each user used for voting
     mapping(address => uint256) internal votedAmount;
@@ -73,19 +61,19 @@ contract RewardManager is ERC1155, Initializable {
      * @param tiers sets how much each token id is worth. Like quantities, array length matches tiers to token id.
      * e.g. [1000, 2000, 3000] means to acquire token id 0, user needs to pay 1000n (n means whatever currency was set in the campaign).
      */
-    function initialize(address _campaign, string memory _uri, uint256[] memory quantities, uint256[] memory tiers, string memory _projectName) external initializer {
+    function initialize(address _campaign, string memory _uri, uint256[] memory quantities, uint256[] memory tiers, ContributionCertificate _cc) external initializer {
         require(quantities.length == tiers.length, "Length difference");
         campaign = StandardCampaignStrategy(_campaign);
-        projectName = _projectName;
         admin = msg.sender;
-        
+
+        //cc registration
+        cc = _cc;
+
+        //tier initialization
         for(uint i = 0; i < quantities.length; i++){
             _mint(address(this), i, quantities[i], "");
             idsToTiers[i] = tiers[i];
         }
-
-        //certificate id will always be quantities length + 1 make sure the uri supports this
-        certificateId = quantities.length + 1;
 
         _setURI(_uri);
     }
@@ -134,6 +122,7 @@ contract RewardManager is ERC1155, Initializable {
         } else {
             require(userPledgedAmount[msg.sender] >= amount, "Wrong amount");
             campaign.withdrawFunds(amount, msg.sender);
+            userPledgedAmount[msg.sender] -= amount;
         }        
         safeTransferFrom(msg.sender, address(this), id, 1, "");
     }
@@ -143,17 +132,10 @@ contract RewardManager is ERC1155, Initializable {
      * if the sender is not the original pledger, the certificate's amount param will be based the the receipt's tier
      * 
      * @param id the ERC1155 token id that will be burned
-     * @param name the name of the sender for certificate
      */
-    function approveReward(uint id, string memory name) external notAdmin { 
-        //check if the user is the original pledger
-        if(userPledgedAmount[msg.sender] == 0 && this.balanceOf(msg.sender, id) > 0) {
-            certificateOwner[msg.sender] = Certificate(projectName, name, msg.sender, block.timestamp, idsToTiers[id], address(campaign.supportedCurrency()));
-        } else {
-            certificateOwner[msg.sender] = Certificate(projectName, name, msg.sender, block.timestamp, userPledgedAmount[msg.sender], address(campaign.supportedCurrency()));
-        }
+    function approveReward(uint id) external notAdmin returns(uint) { 
         _burn(msg.sender, id, 1);
-        _mint(msg.sender, certificateId, 1, "");
+        return cc.mint(msg.sender); //should return the tokenId
     }
 
     /**

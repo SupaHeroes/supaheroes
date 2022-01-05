@@ -18,6 +18,9 @@ describe("Deployment Test", function () {
   before(async function () {
     // CampaignFactory = await ethers.getContractFactory("StandardCampaignFactory")
     // CampaignFactorySC = await CampaignFactory.deploy()
+    fakeRewardManager = 0x57319d41F71E81F3c65F2a47CA4e001EbAFd4F33;
+    fakeVestingManager = 0x57319d41F71E81F3c65F2a47CA4e001EbAFd4F33;
+
     const [owner, addr1, addr2] = await ethers.getSigners();
 
     ERC20 = await ethers.getContractFactory("ERC20Mock");
@@ -26,20 +29,17 @@ describe("Deployment Test", function () {
     await erc20.transferInternal(owner.address, addr2.address, 8000);
 
     CampaignStrategy = await ethers.getContractFactory("StandardCampaignStrategy");
-    CampaignContract = await CampaignStrategy.deploy(
-      owner.address,
-      erc20.address,
-      "https://google.com",
-      owner.address,
-      1000,
-      1639296232,
-      1640505832,
-      [
-        { claimDate: 1640851432, amount: 500, currency: erc20.address },
-        { claimDate: 1640937832, amount: 500, currency: erc20.address },
-      ]
-    );
+    CampaignContract = await CampaignStrategy.deploy();
     await CampaignContract.deployed();
+    await CampaignContract.initialize(
+      erc20.address,
+      "https://example.com",
+      1643671385,
+      1000,
+      1641018185,
+      fakeVestingManager,
+      fakeRewardManager
+    );
   });
 
   it("Making sure metadata changes correctly", async function () {
@@ -52,7 +52,7 @@ describe("Deployment Test", function () {
   });
 
   it("Should revert when admin pledges", async function () {
-    expect(await CampaignContract.pledge(500, erc20.address)).to.be.revertedWith('Admin cannot pledge');
+    expect(await CampaignContract.pledge(500, 100, erc20.address, )).to.be.revertedWith('Admin cannot pledge');
   });
 
   it("Should pass when other user pledges", async function () {

@@ -28,8 +28,10 @@ contract CampaignFactory is Ownable {
     address public rewardMaster;
     //vestingManager master contract address
     address public vestingMaster;
+    //cc address
+    address public cc;
 
-    event ContractLog(uint);
+    event ContractLog(uint timestamp, address campaignMaster, address rewardMaster, address vestingMaster);
     event NewCampaign(address indexed contractAddress, address indexed creator, address rewardMaster, address vestingMaster);
 
     //clones library from OpenZeppelin
@@ -45,10 +47,11 @@ contract CampaignFactory is Ownable {
     @param _master2 Reward manager contract
     @param _master3 Vesting manager contract
     */
-    constructor(address _master, address _master2, address _master3) {
+    constructor(address _master, address _master2, address _master3, address _cc) {
         master = _master;
         rewardMaster = _master2;
         vestingMaster = _master3;
+        cc = _cc;
     }
 
     /**
@@ -61,8 +64,17 @@ contract CampaignFactory is Ownable {
     function changeMasters(address _newMaster, address _newReward, address _newVesting) external onlyOwner {
         master = _newMaster;
         rewardMaster = _newReward;
-        _newVesting = _newVesting;
-        emit ContractLog(block.timestamp);
+        vestingMaster = _newVesting;
+        emit ContractLog(block.timestamp, master, rewardMaster, vestingMaster);
+    }
+
+    /**
+    @notice Changes the master addresses
+    @dev Calling this contract should be done through multisig/gnosis
+    @param _cc Campaign strategy contract
+     */
+    function changeCC(address _cc) external onlyOwner {
+        cc = _cc;
     }
 
     /**
@@ -72,6 +84,11 @@ contract CampaignFactory is Ownable {
     function createCampaign() external payable {
         address newAddress = master.clone();
         address reward = rewardMaster.clone();
+
+        cc.call(
+            abi.encodeWithSignature("registerManager(address)", reward)
+        );
+
         emit NewCampaign(newAddress, msg.sender, reward, address(0));
     }
 
@@ -83,6 +100,11 @@ contract CampaignFactory is Ownable {
         address newAddress = master.clone();
         address reward = rewardMaster.clone();
         address vest = vestingMaster.clone();
+
+        cc.call(
+            abi.encodeWithSignature("registerManager(address)", reward)
+        );
+
         emit NewCampaign(newAddress, msg.sender, reward, vest);
     }
 }
