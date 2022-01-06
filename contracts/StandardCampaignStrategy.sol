@@ -2,7 +2,6 @@
 pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "./interfaces/ICampaign.sol";
 import '@openzeppelin/contracts/proxy/utils/Initializable.sol';
 

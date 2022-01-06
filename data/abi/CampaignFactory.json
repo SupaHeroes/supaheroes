@@ -1,0 +1,17 @@
+[
+  "constructor(address,address,address)",
+  "event ContractLog(uint256,address,address,address)",
+  "event NewCampaign(address indexed,address indexed,address,address)",
+  "event OwnershipTransferred(address indexed,address indexed)",
+  "function cc() view returns (address)",
+  "function changeCC(address)",
+  "function changeMasters(address,address,address)",
+  "function createCampaign() returns (address, address)",
+  "function createCampaignWithVesting() returns (address, address, address)",
+  "function master() view returns (address)",
+  "function owner() view returns (address)",
+  "function renounceOwnership()",
+  "function rewardMaster() view returns (address)",
+  "function transferOwnership(address)",
+  "function vestingMaster() view returns (address)"
+]

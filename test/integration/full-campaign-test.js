@@ -1,5 +1,8 @@
 const { ethers } = require("hardhat");
 const { expect } = require("chai");
+const campaignABI = require("../../data/abi/StandardCampaignStrategy.json");
+const rewardABI = require("../../data/abi/RewardManager.json");
+const vestingABI = require("../../data/abi/VestingManager.json");
 
 describe("Integration Test", function () {
 
@@ -27,7 +30,6 @@ describe("Integration Test", function () {
     erc20 = await ERC20.deploy("Test token", "TT", owner.address, 1000000000);
     await erc20.transferInternal(owner.address, addr1.address, 6000);
     await erc20.transferInternal(owner.address, addr2.address, 8000);
-
    
   });
 
@@ -60,85 +62,113 @@ describe("Integration Test", function () {
       expect(factoryContract.address).to.exist;
     });
 
+    it("Should deploy contribution token contract", async function(){
+      const CC = await ethers.getContractFactory("ContributionCertificate");
+      ccToken = await CC.deploy(factoryContract.address);
+      await ccToken.deployed();
+      expect(ccToken.address).to.exist;
+    });
+
   })
 
   describe("Cloning", function() {
-    it("Should clone campaign without vesting", async function(){
-      const res = await factoryContract.createCampaignWithVesting();
-      console.log(res);
-      // cClone = new ethers.Contract(cRes, cmaster.abi);
-      // console.log(cClone.address);
-      // rClone = new ethers.Contract(rRes, rmaster.abi);
-      // vClone = new ethers.Contract(vRes, vmaster.abi);
+    it("Should clone campaign with vesting", async function(){
 
-      // expect(await cClone.rewardManager.call()).to.equal(rClone.address);
+    const tx = await factoryContract.createCampaignWithVesting();
+
+    const rc = await tx.wait();
+
+    const event = rc.events.find(event => event.event === 'NewCampaign');
+
+    // console.log(event.args);
+    // console.log(event.args[0].toString());
+    cClone = new ethers.Contract(event.args[0], campaignABI, owner);
+    rClone = new ethers.Contract(event.args[2], rewardABI, owner);
+    vClone = new ethers.Contract(event.args[3], vestingABI, owner);
+
+    expect(cClone.address).to.exist;
+    expect(rClone.address).to.exist;
+    expect(vClone.address).to.exist;
     });
   });
 
-  // describe("Initialization", function() {
-  //   it("Should initialize campaign clone and check if admin is owner", async function(){
-  //     await CampaignContract.initialize(
-  //       erc20.address,
-  //       "https://example.com",
-  //       1646468207,
-  //       1000,
-  //       1644049007,
-  //       fakeVestingManager,
-  //       fakeRewardManager
-  //     );
-  //     let admin = await CampaignContract.admin.call();
-  //     expect(admin).to.equal(owner.address);
-  //   });
+  describe("Initialization", function() {
+    it("Should initialize campaign clone", async function(){
+      await cClone.initialize(
+        erc20.address,
+        "https://example.com",
+        1646468207,
+        1000,
+        1644049007,
+        vClone.address,
+        rClone.address
+      );
+      
+      expect(await cClone.rewardManager.call()).to.exist;
+      expect(await cClone.metadata.call()).to.exist;
+    });
 
-  //   it("Should initialize reward clone and check if admin is owner", async function(){
-  //     await CampaignContract.initialize(
-  //       erc20.address,
-  //       "https://example.com",
-  //       1646468207,
-  //       1000,
-  //       1644049007,
-  //       fakeVestingManager,
-  //       fakeRewardManager
-  //     );
-  //     let admin = await CampaignContract.admin.call();
-  //     expect(admin).to.equal(owner.address);
-  //   });
+    it("Should initialize reward manager clone", async function(){
+      await rClone.initialize(
+        cClone.address,
+        "https://example.com",
+        [1000, 500, 50],
+        [5, 500, 1000],
+        ccToken.address
+      );
+    });
 
-  //   it("Should initialize vesting clone and check if admin is owner", async function(){
-  //     await CampaignContract.initialize(
-  //       erc20.address,
-  //       "https://example.com",
-  //       1646468207,
-  //       1000,
-  //       1644049007,
-  //       fakeVestingManager,
-  //       fakeRewardManager
-  //     );
-  //     let admin = await CampaignContract.admin.call();
-  //     expect(admin).to.equal(owner.address);
-  //   });
-  // });
+    // it("Should initialize vesting manager clone", async function(){
+    //   await cClone.initialize(
+    //     erc20.address,
+    //     "https://example.com",
+    //     1646468207,
+    //     1000,
+    //     1644049007,
+    //     vClone.address,
+    //     rClone.address
+    //   );
+      
+    //   expect(await cClone.rewardManager.call()).to.exist;
+    //   expect(await cClone.metadata.call()).to.exist;
+    // });
+
+    it("Should have the correct reward manager", async function(){
+      const res = await cClone.rewardManager.call();
+      expect(res).to.equal(rClone.address);
+    });
+
+
+    it("Should have the correct vesting manager", async function(){
+      const res = await cClone.vestingManager.call();
+      expect(res).to.equal(vClone.address);
+    });
+
+    it("Should have the owner as admin", async function(){
+      const admin = await cClone.admin.call();
+      expect(admin).to.equal(owner.address);
+    });    
+  });
   
 
-  // describe("Contract Interaction", function(){
-  //   it("Making sure metadata changes correctly", async function () {
-  //     await CampaignContract.changeMetadata("test");
-  //     expect(await CampaignContract.metadata.call()).to.equal("test");
-  //   });
+  describe("Contract Interaction", function(){
+    it("Should receive receipt NFT on pledge", async function () {
+      await rClone.connect(addr1).pledge();
+    });
   
-  //   it("Make sure supported currency is correct", async function () {
-  //     expect(await CampaignContract.supportedCurrency.call()).to.equal(erc20.address);
-  //   });
+    it("Make sure supported currency is correct", async function () {
+      expect(await CampaignContract.supportedCurrency.call()).to.equal(erc20.address);
+    });
   
-  //   it("Should revert when admin pledges", async function () {
-  //     await expect(CampaignContract.pledge(500, 100, erc20.address, owner.address)).to.be.revertedWith("Admin cannot pledge");
-  //   });
+    it("Should revert when admin pledges", async function () {
+      await expect(CampaignContract.pledge(500, 100, erc20.address, owner.address)).to.be.revertedWith("Admin cannot pledge");
+    });
 
-  //   it("Should pass when other user pledges", async function () {
-  //     await erc20.connect(addr1).approve(CampaignContract.address, 3000);
-  //     await CampaignContract.connect(addr1).pledge(3000, 200, erc20.address, addr1.address);
-  //     expect(await erc20.balanceOf(CampaignContract.address)).to.equal(3000);
-  //   });
-  // });
+    it("Should pass when other user pledges", async function () {
+      await erc20.connect(addr1).approve(CampaignContract.address, 3000);
+      await CampaignContract.connect(addr1).pledge(3000, 200, erc20.address, addr1.address);
+      expect(await erc20.balanceOf(CampaignContract.address)).to.equal(3000);
+    });
+  });
   
 });

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "./StandardCampaignStrategy.sol";
-import "./CC.sol";
+import "./openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import {StandardCampaignStrategy} from "./StandardCampaignStrategy.sol";
+import {ContributionCertificate} from "./CC.sol";
 import '@openzeppelin/contracts/proxy/utils/Initializable.sol';
 
 /* 
@@ -25,7 +25,7 @@ import '@openzeppelin/contracts/proxy/utils/Initializable.sol';
     */
 
     /**Supaheroes Reward Manager */
-contract RewardManager is ERC1155, Initializable {  
+contract RewardManager is ERC1155, IERC1155Receiver, Initializable {  
     //campaign address
     StandardCampaignStrategy public campaign;
 
@@ -150,5 +150,25 @@ contract RewardManager is ERC1155, Initializable {
         campaign.pledge(amount, idsToTiers[id], token, msg.sender);
         userPledgedAmount[msg.sender] += amount;
         safeTransferFrom(address(this), msg.sender, id, 1, "");
+    }
+
+    function onERC1155Received(
+        address,
+        address,
+        uint256,
+        uint256,
+        bytes memory
+    ) public virtual override returns (bytes4) {
+        return this.onERC1155Received.selector;
+    }
+
+    function onERC1155BatchReceived(
+        address,
+        address,
+        uint256[] memory,
+        uint256[] memory,
+        bytes memory
+    ) public virtual override returns (bytes4) {
+        return this.onERC1155BatchReceived.selector;
     }
 }

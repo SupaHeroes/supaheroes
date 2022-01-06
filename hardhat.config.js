@@ -1,6 +1,7 @@
 require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-etherscan");
 require('hardhat-contract-sizer');
+require('hardhat-abi-exporter');
 require("dotenv").config();
 
 
@@ -27,6 +28,16 @@ module.exports = {
       runs: 200,
       enabled: true
     }
+  },
+  abiExporter: {
+    path: './data/abi',
+    runOnCompile: true,
+    clear: true,
+    flat: true,
+    only: ['StandardCampaignStrategy', 'RewardManager', 'VestingManager', 'CampaignFactory', 'ContributionCertificate'],
+    except: [':ERC20Mock$'],
+    spacing: 2,
+    pretty: true,
   },
   contractSizer: {
     alphaSort: true,
