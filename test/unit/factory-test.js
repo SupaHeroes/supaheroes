@@ -20,8 +20,7 @@ describe("Campaign Factory Unit Test", function () {
 
   before(async function () {
     [owner, addr1] = await ethers.getSigners();
-    console.log("Owner is:" + owner.address)
-
+   
     const CampaignStrategy = await ethers.getContractFactory("StandardCampaignStrategy");
     cmaster = await CampaignStrategy.deploy();
     const RewardManager = await ethers.getContractFactory("RewardManager");
@@ -37,7 +36,7 @@ describe("Campaign Factory Unit Test", function () {
   describe("Deployment", function(){
     it("Should have the correct owner", async function () {
       const addr = await factoryContract.owner();
-      await expect(addr).to.equal(owner.address);
+      expect(addr).to.equal(owner.address);
     });
   });
 

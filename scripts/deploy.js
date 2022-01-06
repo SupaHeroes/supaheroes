@@ -21,11 +21,29 @@ async function main() {
 
   const factory = await ethers.getContractFactory("CampaignFactory");
   const fc = await factory.deploy(cM.address, rM.address, vM.address);
+
+  const CC = await ethers.getContractFactory("ContributionCertificate");
+  const cc = await CC.deploy(fc.address);
   
   console.log("Campaign Master address:", cM.address);
   console.log("Reward Master address:", rM.address);
   console.log("Vesting Master address:", vM.address);
   console.log("Factory address:", fc.address);
+  console.log("CC address:", cc.address);
+
+  await hre.run("verify:verify", {
+    address: fc.address,
+    constructorArguments: [
+      cM.address, rM.address, vM.address
+    ],
+  });
+
+  await hre.run("verify:verify", {
+    address: cc.address,
+    constructorArguments: [
+      fc.address
+    ],
+  });
 }
 
 main()

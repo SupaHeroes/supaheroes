@@ -24,13 +24,13 @@ describe("Integration Test", function () {
 
   before(async function () {
     [owner, addr1, addr2] = await ethers.getSigners();
-    console.log("Owner is:" + owner.address);
+    
 
     const ERC20 = await ethers.getContractFactory("ERC20Mock");
     erc20 = await ERC20.deploy("Test token", "TT", owner.address, 1000000000);
-    await erc20.transferInternal(owner.address, addr1.address, 6000);
-    await erc20.transferInternal(owner.address, addr2.address, 8000);
    
+    await erc20.transfer( addr1.address, 6000);
+    await erc20.transfer( addr2.address, 8000);
   });
 
   describe("Deployments", function(){
@@ -118,20 +118,15 @@ describe("Integration Test", function () {
       );
     });
 
-    // it("Should initialize vesting manager clone", async function(){
-    //   await cClone.initialize(
-    //     erc20.address,
-    //     "https://example.com",
-    //     1646468207,
-    //     1000,
-    //     1644049007,
-    //     vClone.address,
-    //     rClone.address
-    //   );
+    it("Should initialize vesting manager clone", async function(){
+      await vClone.initialize(
+        [1641487894, 1644141094],
+        [200, 200],
+        cClone.address
+      );
       
-    //   expect(await cClone.rewardManager.call()).to.exist;
-    //   expect(await cClone.metadata.call()).to.exist;
-    // });
+      expect(await vClone.campaign.call()).to.exist;
+    });
 
     it("Should have the correct reward manager", async function(){
       const res = await cClone.rewardManager.call();
@@ -151,23 +146,29 @@ describe("Integration Test", function () {
   });
   
 
-  describe("Contract Interaction", function(){
-    it("Should receive receipt NFT on pledge", async function () {
-      await rClone.connect(addr1).pledge();
-    });
-  
-    it("Make sure supported currency is correct", async function () {
-      expect(await CampaignContract.supportedCurrency.call()).to.equal(erc20.address);
-    });
-  
-    it("Should revert when admin pledges", async function () {
-      await expect(CampaignContract.pledge(500, 100, erc20.address, owner.address)).to.be.revertedWith("Admin cannot pledge");
+  describe("Reward Manager Interaction", function(){
+    it("Should revert when wrong receipt id specified", async function () {
+      await expect(rClone.connect(addr1).pledgeForReward(300, 1, erc20.address)).to.be.reverted;
     });
 
-    it("Should pass when other user pledges", async function () {
-      await erc20.connect(addr1).approve(CampaignContract.address, 3000);
-      await CampaignContract.connect(addr1).pledge(3000, 200, erc20.address, addr1.address);
-      expect(await erc20.balanceOf(CampaignContract.address)).to.equal(3000);
+    it("Should revert if amount paid for the specified tier is not enough", async function () {
+      await expect(rClone.connect(addr1).pledgeForReward(300, 1, erc20.address)).to.be.revertedWith("Not enough amount");
+    });
+
+    it("Should receive receipt NFT on pledge", async function () {
+      await erc20.connect(addr1).approve(cClone.address, 550);
+      console.log(await erc20.allowance(addr1.address, cClone.address));
+      await rClone.connect(addr1).pledgeForReward(520, 1, erc20.address);
+
+      expect(await erc20.balanceOf(cClone.address)).to.equal(520);
+      expect(await rClone.userPledgedAmount(addr1.address)).to.equal(520);
+      expect(await rClone.balanceOf(addr1.address, 1)).to.equal(1);
+    });
+
+    it("Should be able to vote", async function () {
+      await rClone.connect(addr1).vote(1);
+      expect(await rClone.votedAmount(addr1.address)).to.equal(1);
+      expect(await rClone.balanceOf(addr1.address, 1)).to.equal(0);
     });
   });
   

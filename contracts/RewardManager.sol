@@ -36,16 +36,16 @@ contract RewardManager is ERC1155, IERC1155Receiver, Initializable {
     ContributionCertificate public cc;
 
     //How much each token type is worth based on tiers set by campaign admin
-    mapping(uint => uint) idsToTiers;
+    mapping(uint => uint) public idsToTiers;
 
     //project name string for certificate purpose
     string public projectName;
 
     //record of user's pledge amount
-    mapping(address => uint256) userPledgedAmount;
+    mapping(address => uint256) public userPledgedAmount;
 
     //mapping to record how much token each user used for voting
-    mapping(address => uint256) internal votedAmount;
+    mapping(address => uint256) public votedAmount;
 
     constructor() ERC1155("") {
        
@@ -56,6 +56,7 @@ contract RewardManager is ERC1155, IERC1155Receiver, Initializable {
      * for more information head over to https://eips.ethereum.org/EIPS/eip-1167
      * 
      * @param _uri sets the token uri for ERC1155. Make sure _uri follows https://eips.ethereum.org/EIPS/eip-1155
+     * Quantities and tiers uses matrix matching mechanism, e.g. a1b1 = x
      * @param quantities sets how many the contract should mint for each token id. This contract relies on array length to match quantity to token id
      * e.g. [100 , 200 , 100 , 0] will make the contract mint 100 tokens for token id 0, 200 tokens for token id 1, and so on.
      * @param tiers sets how much each token id is worth. Like quantities, array length matches tiers to token id.
@@ -92,7 +93,7 @@ contract RewardManager is ERC1155, IERC1155Receiver, Initializable {
     function vote(uint id) external notAdmin {
         votedAmount[msg.sender] += 1;
         campaign.voteRefund(idsToTiers[id]);
-        safeTransferFrom(msg.sender, address(this), id, idsToTiers[id], "");
+        safeTransferFrom(msg.sender, address(this), id, 1, "");
     }
 
     /**
@@ -145,10 +146,11 @@ contract RewardManager is ERC1155, IERC1155Receiver, Initializable {
      */
     function pledgeForReward(uint amount, uint id, address token) external notAdmin {
         require(this.balanceOf(msg.sender, id) == 0, "You already pledged this tier");
-        require(this.balanceOf(address(this), id) > 0);
-        require(amount >= idsToTiers[id]);
+        require(this.balanceOf(address(this), id) > 0, "Out of stock");
+        require(amount >= idsToTiers[id], "Not enough amount");
         campaign.pledge(amount, idsToTiers[id], token, msg.sender);
         userPledgedAmount[msg.sender] += amount;
+        _setApprovalForAll(address(this), msg.sender, true);
         safeTransferFrom(address(this), msg.sender, id, 1, "");
     }
 

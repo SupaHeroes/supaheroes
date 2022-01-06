@@ -21,19 +21,16 @@ describe("Standard Campaign Strategy Unit Test", function () {
     fakeVestingManager = "0x57319d41F71E81F3c65F2a47CA4e001EbAFd4F33";
 
     [owner, addr1, addr2] = await ethers.getSigners();
-    console.log("Owner is:" + owner.address)
-
-    console.log("Creating Mock Token");
+    
     const ERC20 = await ethers.getContractFactory("ERC20Mock");
     erc20 = await ERC20.deploy("Test token", "TT", owner.address, 1000000000);
-    await erc20.transferInternal(owner.address, addr1.address, 6000);
-    await erc20.transferInternal(owner.address, addr2.address, 8000);
+    await erc20.transfer( addr1.address, 6000);
+    await erc20.transfer( addr2.address, 8000);
 
     const CampaignStrategy = await ethers.getContractFactory("StandardCampaignStrategy");
     CampaignContract = await CampaignStrategy.deploy();
     await CampaignContract.deployed();
-    console.log("Campaign deployed on: " + CampaignContract.address);
-    console.log("Begin testing....")
+    
   });
 
   describe("Initialization", function() {

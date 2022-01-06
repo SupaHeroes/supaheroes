@@ -1,8 +1,9 @@
 [
+  "function amounts(uint256) view returns (uint256)",
   "function campaign() view returns (address)",
   "function claimable() view returns (uint256)",
   "function claimed() view returns (uint256)",
-  "function initialize(tuple(uint256,uint256)[],address)",
-  "function payOutClaimable(address,uint256) returns (bool)",
-  "function vests(uint256) view returns (uint256, uint256)"
+  "function dates(uint256) view returns (uint256)",
+  "function initialize(uint256[],uint256[],address)",
+  "function payOutClaimable(address,uint256) returns (bool)"
 ]

@@ -10,6 +10,7 @@
   "function balanceOfBatch(address[],uint256[]) view returns (uint256[])",
   "function campaign() view returns (address)",
   "function cc() view returns (address)",
+  "function idsToTiers(uint256) view returns (uint256)",
   "function initialize(address,string,uint256[],uint256[],address)",
   "function isApprovedForAll(address,address) view returns (bool)",
   "function onERC1155BatchReceived(address,address,uint256[],uint256[],bytes) returns (bytes4)",
@@ -23,5 +24,7 @@
   "function supportsInterface(bytes4) view returns (bool)",
   "function unVote(uint256)",
   "function uri(uint256) view returns (string)",
-  "function vote(uint256)"
+  "function userPledgedAmount(address) view returns (uint256)",
+  "function vote(uint256)",
+  "function votedAmount(address) view returns (uint256)"
 ]

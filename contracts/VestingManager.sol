@@ -22,15 +22,14 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 contract VestingManager is Initializable  {
 
     //vesting term struct does not contain metadata, deal with this on the frontend to save gas
-    struct Vest {
-        uint256 claimDate;
-        uint256 amount;
-    }
+    uint[] public dates;
+    uint[] public amounts;
 
-    //vestings
-    Vest[] public vests;
+    uint[] private claimedDates;
+
     //amount claimed by admin
     uint256 public claimed;
+
     //admin address
     address admin;
 
@@ -40,19 +39,18 @@ contract VestingManager is Initializable  {
      /**
      * @dev Vesting manager follows EIP-1167 Minimal Proxy use this to initialize vesting manager instead of constructor
      * for more information head over to https://eips.ethereum.org/EIPS/eip-1167
+     * Same matrix matching mechanism like RewardManager contract
      * 
-     * @param _vests vesting agreements
+     * @param _dates dates in array refer to RewardManager contract to see how this works
+     * @param _amounts amounts in array refer to RewardManager contract to see how this works
      * @param _campaign campaign address
      */
-    function initialize (Vest[] memory _vests, ICampaign _campaign) external initializer {
+    function initialize (uint[] memory _dates, uint[] memory _amounts, address _campaign) external initializer {
+        require(_dates.length == _amounts.length, "Not same length");
         admin = msg.sender;
-        campaign = _campaign;
-
-        for (uint256 i = 0; i < vests.length; i++) {
-            Vest memory n = _vests[i];
-            vests.push(n);
-        }
-
+        campaign = ICampaign(_campaign);
+        dates = _dates;
+        amounts = amounts;
     }
 
      /**
@@ -60,12 +58,13 @@ contract VestingManager is Initializable  {
      */
     function claimable() public view returns (uint256) {
         uint256 total = 0;
-        for (uint256 i = 0; i < vests.length; i++) {
-            if (vests[i].claimDate <= block.timestamp) {
-                total += vests[i].amount;
+        for (uint256 i = 0; i < amounts.length; i++) {
+            if (dates[i] <= block.timestamp) {
+                total += amounts[i];
             }
         }
-        return total;
+
+        return total - claimed;
     }
 
      /**
@@ -79,10 +78,9 @@ contract VestingManager is Initializable  {
     {
         require(msg.sender == admin, "Admin only");
         uint256 _claimable = claimable();
-        require(amount <= _claimable);
-        require(_claimable >= claimed, "No claimable");
-        campaign.payOut(to, amount);
+        require(amount <= _claimable, "Not available yet");
         claimed += amount;
+        campaign.payOut(to, amount);
         return true;
     }
 }
