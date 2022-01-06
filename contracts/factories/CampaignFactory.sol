@@ -47,11 +47,10 @@ contract CampaignFactory is Ownable {
     @param _master2 Reward manager contract
     @param _master3 Vesting manager contract
     */
-    constructor(address _master, address _master2, address _master3, address _cc) {
+    constructor(address _master, address _master2, address _master3) {
         master = _master;
         rewardMaster = _master2;
         vestingMaster = _master3;
-        cc = _cc;
     }
 
     /**
@@ -81,13 +80,14 @@ contract CampaignFactory is Ownable {
     @notice Creates a campaign strategy contract + reward manager contract
     @dev Make sure to initialize each contracts before taken by other people. Important! 
      */
-    function createCampaign() external payable {
-        address newAddress = master.clone();
-        address reward = rewardMaster.clone();
+    function createCampaign() external returns (address newAddress, address reward) {
+        newAddress = master.clone();
+        reward = rewardMaster.clone();
 
-        cc.call(
+        (bool success,) = cc.call(
             abi.encodeWithSignature("registerManager(address)", reward)
         );
+        require(success);
 
         emit NewCampaign(newAddress, msg.sender, reward, address(0));
     }
@@ -96,14 +96,15 @@ contract CampaignFactory is Ownable {
     @notice Creates a campaign strategy contract + reward manager contract + vesting manager contract
     @dev Make sure to initialize each contracts before taken by other people. Important! 
      */
-    function createCampaignWithVesting() external payable {
-        address newAddress = master.clone();
-        address reward = rewardMaster.clone();
-        address vest = vestingMaster.clone();
+    function createCampaignWithVesting() external returns (address newAddress, address reward, address vest){
+        newAddress = master.clone();
+        reward = rewardMaster.clone();
+        vest = vestingMaster.clone();
 
-        cc.call(
+        (bool success,) = cc.call(
             abi.encodeWithSignature("registerManager(address)", reward)
         );
+        require(success);
 
         emit NewCampaign(newAddress, msg.sender, reward, vest);
     }

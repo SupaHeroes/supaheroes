@@ -6,57 +6,72 @@ const { expect } = require("chai");
 // Enable and inject BN dependency
 chai.use(require("chai-bn")(BN));
 
-describe("Deployment Test", function () {
+describe("Standard Campaign Strategy Unit Test", function () {
 
-    let owner;
+  let owner;
   let addr1;
   let addr2;
   let erc20;
-  let ERC20;
-  let CampaignStrategy;
   let CampaignContract;
+
   before(async function () {
     // CampaignFactory = await ethers.getContractFactory("StandardCampaignFactory")
     // CampaignFactorySC = await CampaignFactory.deploy()
-    fakeRewardManager = 0x57319d41F71E81F3c65F2a47CA4e001EbAFd4F33;
-    fakeVestingManager = 0x57319d41F71E81F3c65F2a47CA4e001EbAFd4F33;
+    fakeRewardManager = "0x57319d41F71E81F3c65F2a47CA4e001EbAFd4F33";
+    fakeVestingManager = "0x57319d41F71E81F3c65F2a47CA4e001EbAFd4F33";
 
-    const [owner, addr1, addr2] = await ethers.getSigners();
+    [owner, addr1, addr2] = await ethers.getSigners();
+    console.log("Owner is:" + owner.address)
 
-    ERC20 = await ethers.getContractFactory("ERC20Mock");
+    console.log("Creating Mock Token");
+    const ERC20 = await ethers.getContractFactory("ERC20Mock");
     erc20 = await ERC20.deploy("Test token", "TT", owner.address, 1000000000);
     await erc20.transferInternal(owner.address, addr1.address, 6000);
     await erc20.transferInternal(owner.address, addr2.address, 8000);
 
-    CampaignStrategy = await ethers.getContractFactory("StandardCampaignStrategy");
+    const CampaignStrategy = await ethers.getContractFactory("StandardCampaignStrategy");
     CampaignContract = await CampaignStrategy.deploy();
     await CampaignContract.deployed();
-    await CampaignContract.initialize(
-      erc20.address,
-      "https://example.com",
-      1643671385,
-      1000,
-      1641018185,
-      fakeVestingManager,
-      fakeRewardManager
-    );
+    console.log("Campaign deployed on: " + CampaignContract.address);
+    console.log("Begin testing....")
   });
 
-  it("Making sure metadata changes correctly", async function () {
-    await CampaignContract.changeMetadata("test");
-    expect(await CampaignContract.metadata.call()).to.equal("test");
+  describe("Initialization", function() {
+    it("Initialize clone and check if admin is owner", async function(){
+      await CampaignContract.initialize(
+        erc20.address,
+        "https://example.com",
+        1646468207,
+        1000,
+        1644049007,
+        fakeVestingManager,
+        fakeRewardManager
+      );
+      let admin = await CampaignContract.admin.call();
+      expect(admin).to.equal(owner.address);
+    });
   });
+  
 
-  it("Make sure supported currency is correct", async function () {
-    expect(await CampaignContract.supportedCurrency.call()).to.equal(erc20.address);
-  });
+  describe("Contract Interaction", function(){
+    it("Should change metadata correctly", async function () {
+      await CampaignContract.changeMetadata("test");
+      expect(await CampaignContract.metadata.call()).to.equal("test");
+    });
+  
+    it("Should have the correct currency", async function () {
+      expect(await CampaignContract.supportedCurrency.call()).to.equal(erc20.address);
+    });
+  
+    it("Should revert when admin pledges", async function () {
+      await expect(CampaignContract.pledge(500, 100, erc20.address, owner.address)).to.be.revertedWith("Admin cannot pledge");
+    });
 
-  it("Should revert when admin pledges", async function () {
-    expect(await CampaignContract.pledge(500, 100, erc20.address, )).to.be.revertedWith('Admin cannot pledge');
+    it("Should pass when other user pledges", async function () {
+      await erc20.connect(addr1).approve(CampaignContract.address, 3000);
+      await CampaignContract.connect(addr1).pledge(3000, 200, erc20.address, addr1.address);
+      expect(await erc20.balanceOf(CampaignContract.address)).to.equal(3000);
+    });
   });
-
-  it("Should pass when other user pledges", async function () {
-    await CampaignContract.connect(addr1).pledge(200, erc20.address)
-    expect(await CampaignContract.connect(addr1).userDeposit(addr1.address).toString()).to.equal("200");
-  });
+  
 });

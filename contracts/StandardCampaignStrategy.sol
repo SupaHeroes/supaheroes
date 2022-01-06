@@ -123,7 +123,7 @@ contract StandardCampaignStrategy is ICampaign, Initializable {
      */
     function pledge(uint256 amount, uint256 weight, address token, address from) external override {
         require(amount > 0, "Amount 0");
-        require(msg.sender != admin, "Admin cannot pledge");
+        require(msg.sender != admin || from != admin, "Admin cannot pledge");
         require(IERC20(token) == supportedCurrency, "Currency not supported");
         require(fundingEndTime > block.timestamp, "Funding ended");
 
