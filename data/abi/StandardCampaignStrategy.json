@@ -5,6 +5,8 @@
   "event LogVote(uint256 indexed,address,uint256)",
   "function admin() view returns (address)",
   "function changeMetadata(string)",
+  "function fee() view returns (uint256)",
+  "function feeAddress() view returns (address)",
   "function fundingEndTime() view returns (uint256)",
   "function fundingStartTime() view returns (uint256)",
   "function fundingTarget() view returns (uint256)",

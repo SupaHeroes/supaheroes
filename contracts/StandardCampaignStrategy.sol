@@ -30,6 +30,9 @@ contract StandardCampaignStrategy is ICampaign, Initializable {
     event LogVote(uint256 indexed at, address to, uint256 weight);
     event CampaignStopped(uint256 indexed timestamp);
 
+    uint256 constant public fee = 15 * 10**16;
+    address constant public feeAddress = 0x3c739EFE50E21B249fAaad0a8F6bF7D55960bf31;
+    
     //total voting weight
     uint256 public totalWeight;
     //total voted weight
@@ -212,8 +215,9 @@ contract StandardCampaignStrategy is ICampaign, Initializable {
         require(fundingEndTime < block.timestamp, "Campaign is still running");
         require(isCampaignStopped == false, "Campaign has been stopped");
 
-        supportedCurrency.approve(msg.sender, amount);
-        supportedCurrency.transfer(to, amount);
+        supportedCurrency.approve(msg.sender, amount-(amount*fee));
+        supportedCurrency.transfer(to, amount-(amount*fee));
+        supportedCurrency.transfer(feeAddress, amount*fee);
         return true;
     }
 }
