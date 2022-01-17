@@ -1,17 +1,266 @@
 [
-  "constructor(address,address,address)",
-  "event ContractLog(uint256,address,address,address)",
-  "event NewCampaign(address indexed,address indexed,address,address)",
-  "event OwnershipTransferred(address indexed,address indexed)",
-  "function cc() view returns (address)",
-  "function changeCC(address)",
-  "function changeMasters(address,address,address)",
-  "function createCampaign() returns (address, address)",
-  "function createCampaignWithVesting() returns (address, address, address)",
-  "function master() view returns (address)",
-  "function owner() view returns (address)",
-  "function renounceOwnership()",
-  "function rewardMaster() view returns (address)",
-  "function transferOwnership(address)",
-  "function vestingMaster() view returns (address)"
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_master",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_master2",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_master3",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "campaignMaster",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "rewardMaster",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "vestingMaster",
+        "type": "address"
+      }
+    ],
+    "name": "ContractLog",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "contractAddress",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "rewardMaster",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "vestingMaster",
+        "type": "address"
+      }
+    ],
+    "name": "NewCampaign",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "cc",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_cc",
+        "type": "address"
+      }
+    ],
+    "name": "changeCC",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_newMaster",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_newReward",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_newVesting",
+        "type": "address"
+      }
+    ],
+    "name": "changeMasters",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "createCampaign",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "newAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "reward",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "createCampaignWithVesting",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "newAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "reward",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "vest",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "master",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "rewardMaster",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "vestingMaster",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
 ]

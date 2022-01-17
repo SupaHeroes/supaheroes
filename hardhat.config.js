@@ -37,7 +37,7 @@ module.exports = {
     only: ['StandardCampaignStrategy', 'RewardManager', 'VestingManager', 'CampaignFactory', 'ContributionCertificate'],
     except: [':ERC20Mock$'],
     spacing: 2,
-    pretty: true,
+    pretty: false,
   },
   contractSizer: {
     alphaSort: true,

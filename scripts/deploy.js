@@ -43,6 +43,18 @@ async function main() {
   });
 
   await hre.run("verify:verify", {
+    address: cM.address
+  });
+
+  await hre.run("verify:verify", {
+    address: rM.address
+  });
+
+  await hre.run("verify:verify", {
+    address: vM.address
+  });
+  
+  await hre.run("verify:verify", {
     address: cc.address,
     constructorArguments: [
       fc.address
