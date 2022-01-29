@@ -5,6 +5,7 @@ import "./openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {StandardCampaignStrategy} from "./StandardCampaignStrategy.sol";
 import {ContributionCertificate} from "./CC.sol";
 import '@openzeppelin/contracts/proxy/utils/Initializable.sol';
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 /* 
     Reward Manager for Supaheroes.org
@@ -26,6 +27,8 @@ import '@openzeppelin/contracts/proxy/utils/Initializable.sol';
 
     /**Supaheroes Reward Manager */
 contract RewardManager is ERC1155, IERC1155Receiver, Initializable {  
+    using Strings for uint256;
+
     //campaign address
     StandardCampaignStrategy public campaign;
 
@@ -152,6 +155,15 @@ contract RewardManager is ERC1155, IERC1155Receiver, Initializable {
         userPledgedAmount[msg.sender] += amount;
         _setApprovalForAll(address(this), msg.sender, true);
         safeTransferFrom(address(this), msg.sender, id, 1, "");
+    }
+
+    function setUri(string memory newUri) external {
+        require(msg.sender == admin, "not admin");
+        _setURI(newUri);
+    }
+
+    function uri(uint256 tokenId) public view override returns (string memory) {
+        return (string(abi.encodePacked(_uri, tokenId.toString(), ".json")));
     }
 
     function onERC1155Received(

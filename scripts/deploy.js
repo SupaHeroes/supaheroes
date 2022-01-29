@@ -19,8 +19,8 @@ async function main() {
   const vestingMaster = await ethers.getContractFactory("VestingManager");
   const vM = await vestingMaster.deploy();
 
-  const Token = await ethers.getContractFactory("Token");
-  const Tk = await Token.deploy("SUPA", "SUPA");
+  const Token = await ethers.getContractFactory("SupaToken");
+  const Tk = await Token.deploy();
 
   const factory = await ethers.getContractFactory("CampaignFactory");
   const fc = await factory.deploy(cM.address, rM.address, vM.address);
@@ -52,6 +52,10 @@ async function main() {
 
   await hre.run("verify:verify", {
     address: vM.address
+  });
+
+  await hre.run("verify:verify", {
+    address: Tk.address,
   });
   
   await hre.run("verify:verify", {

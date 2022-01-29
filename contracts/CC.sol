@@ -7,7 +7,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract ContributionCertificate is ERC721, Ownable{
     using Counters for Counters.Counter;
+    using Strings for uint256;
+
     Counters.Counter private _tokenIds;
+    string private _uriBase;
 
     mapping(address => bool) whitelistedManager;
     address factory;
@@ -31,7 +34,13 @@ contract ContributionCertificate is ERC721, Ownable{
         return newItemId;
     }
 
-    function _baseURI() internal pure override returns (string memory) {
-        return "ipfs://Qmdz6qQ1gkHsBuxiwmLYyM8PeeiBq9JyjbGUVN3WyQeGcW/";
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+         require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
+        return string(abi.encodePacked(_uriBase, tokenId.toString(), ".json"));
     }
+
+    function setBaseUri(string memory uri) external onlyOwner{
+        _uriBase = uri;        
+    }
+
 }

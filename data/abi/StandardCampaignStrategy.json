@@ -1,32 +1,4 @@
 [
-<<<<<<< Updated upstream
-  "event CampaignStopped(uint256 indexed)",
-  "event LogPledge(address indexed,address indexed,uint256,address,uint256)",
-  "event LogRefund(address indexed,uint256,uint256)",
-  "event LogVote(uint256 indexed,address,uint256)",
-  "function admin() view returns (address)",
-  "function changeMetadata(string)",
-  "function fee() view returns (uint256)",
-  "function feeAddress() view returns (address)",
-  "function fundingEndTime() view returns (uint256)",
-  "function fundingStartTime() view returns (uint256)",
-  "function fundingTarget() view returns (uint256)",
-  "function getProjectDetails() view returns (address, uint256, string, uint256, uint256, uint256)",
-  "function initialize(address,string,uint256,uint256,uint256,address,address)",
-  "function isCampaignStopped() view returns (bool)",
-  "function metadata() view returns (string)",
-  "function payOut(address,uint256) returns (bool)",
-  "function pledge(uint256,uint256,address,address)",
-  "function rewardManager() view returns (address)",
-  "function stopCampaign()",
-  "function supportedCurrency() view returns (address)",
-  "function totalWeight() view returns (uint256)",
-  "function unvote(uint256)",
-  "function vestingManager() view returns (address)",
-  "function voteRefund(uint256)",
-  "function votedWeight() view returns (uint256)",
-  "function withdrawFunds(uint256,address) returns (bool)"
-=======
   {
     "anonymous": false,
     "inputs": [
@@ -151,6 +123,32 @@
     "name": "changeMetadata",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "fee",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "feeAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -473,5 +471,4 @@
     "stateMutability": "nonpayable",
     "type": "function"
   }
->>>>>>> Stashed changes
 ]
