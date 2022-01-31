@@ -1,17 +1,17 @@
-# Supaheroes Protocol
-
-Supaheroes protocol is a fully decentralized crowdfunding protocol created to be deployable by anyone on any Ethereum network, specifically Polygon. Create crowdfunding campaigns and receive pledges with ease through the smart contract or build your own crowdfunding website/platform and host any projects yourself without worrying about security, ownership, and transparency.
-
 # Status
 
 The protocol is currently under heavy testing and research. We are trying our best to save gas costs and achieve the most loose architecture possible. 
 
-Kovan testnet Factory contract https://kovan.etherscan.io/address/0xD4953b6D60fa81c16aB2b1EB5Db4065E8d677c64#code
-Kovan testnet Headquarter contract https://kovan.etherscan.io/address/0x13E124cd364Ad17F027e1846d816B4Fa343a0017#code
+Campaign Master address: 0xe9581BcDc8f4EfaC5eA0834Eed04cF130dFD8012
+Reward Master address: 0xe1CA4ffFE33DC6afe72a4508A17D32a2b16bC882
+Vesting Master address: 0x4fd64211A16EB075b8ab2ED7fe2d855Bf252e3b5
+Factory address: 0xe81eAffA679B00279f664877C57e895606dB55Cf
+CC address: 0xD26f0f4b312F33A3D5f378e71f74fE22d4B7b6bf
+Token address: 0x39A7feB2cB226c632731346e74BF8D33DF44cAA2 
+
 
 # Roadmap
 
- * [x] [Hackathon](https://showcase.ethglobal.com/ethonline2021/supaheroes)
  * [x] [Initial Build](https://github.com/SupaHeroes/supaheroes)
  * [x] [Pre-Alpha Build](https://github.com/SupaHeroes/supaheroes)
  * [ ] [In Progress] Whitepaper
