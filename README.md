@@ -4,7 +4,7 @@ The protocol is currently under heavy testing and research. We are trying our be
 
 FUJI TESTNET Addresses
 
-## Token Faucet: 0x799cFE262e9A835486dF7155DEb6Cc24732789E5
+## SUPA Token Faucet: 0x799cFE262e9A835486dF7155DEb6Cc24732789E5
 
 - Campaign Master address: 0xe9581BcDc8f4EfaC5eA0834Eed04cF130dFD8012
 - Reward Master address: 0xe1CA4ffFE33DC6afe72a4508A17D32a2b16bC882
