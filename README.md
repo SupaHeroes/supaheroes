@@ -4,12 +4,15 @@ The protocol is currently under heavy testing and research. We are trying our be
 
 FUJI TESTNET Addresses
 
+## Token Faucet: 0x8380Cb06950B5dC310FD62b4094634d8e7cf7Da3
+
 - Campaign Master address: 0xe9581BcDc8f4EfaC5eA0834Eed04cF130dFD8012
 - Reward Master address: 0xe1CA4ffFE33DC6afe72a4508A17D32a2b16bC882
 - Vesting Master address: 0x4fd64211A16EB075b8ab2ED7fe2d855Bf252e3b5
 - Factory address: 0xe81eAffA679B00279f664877C57e895606dB55Cf
 - CC address: 0xD26f0f4b312F33A3D5f378e71f74fE22d4B7b6bf
 - Token address: 0x39A7feB2cB226c632731346e74BF8D33DF44cAA2 
+
 
 
 # Roadmap
